@@ -6,6 +6,9 @@ import DoctorDetails from "./pages/DoctorDetails/DoctorDetails";
 import About from "./pages/About/About";
 import Contact from "./pages/Contact/Contact";
 import Register from "./pages/Register/Register";
+import Login from "./pages/Login/Login";
+import PrivateRoute from "./routes/PrivateRoute";
+import Dashboard from "./pages/Dashboard/Dashboard";
 
 const router = createBrowserRouter([
   {
@@ -35,6 +38,18 @@ const router = createBrowserRouter([
 {
   path: "/register",
   element: <Register />,
+},
+{
+  path: "/login",
+  element: <Login />,
+},
+{
+  path: "/dashboard",
+  element: (
+    <PrivateRoute>
+      <Dashboard />
+    </PrivateRoute>
+  ),
 },
     ],
   },
