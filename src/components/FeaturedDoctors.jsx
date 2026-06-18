@@ -1,53 +1,48 @@
 const FeaturedDoctors = () => {
   const doctors = [
-    { name: "Dr. Sarah Ahmed", specialization: "Cardiologist", experience: "10 Years", fee: "$40", color: "from-cyan-500 to-blue-600" },
-    { name: "Dr. Tanvir Hasan", specialization: "Neurologist", experience: "8 Years", fee: "$35", color: "from-violet-500 to-indigo-600" },
-    { name: "Dr. Nadia Rahman", specialization: "Dermatologist", experience: "6 Years", fee: "$30", color: "from-pink-500 to-rose-600" },
-    { name: "Dr. Farhan Kabir", specialization: "Orthopedic", experience: "12 Years", fee: "$45", color: "from-emerald-500 to-teal-600" },
-    { name: "Dr. Ayesha Karim", specialization: "Pediatrician", experience: "7 Years", fee: "$32", color: "from-orange-500 to-amber-600" },
-    { name: "Dr. Mahmud Hasan", specialization: "Dentist", experience: "9 Years", fee: "$28", color: "from-sky-500 to-cyan-600" },
+    { name: "Dr. Sam Rene", specialization: "Cardiologist", experience: "10 Years", fee: "$20", image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&auto=format&fit=crop" },
+    { name: "Dr. Tanvir Hasan", specialization: "Neurologist", experience: "9 Years", fee: "৳700", image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=600&auto=format&fit=crop" },
+    { name: "Dr. Faria ", specialization: "Dermatologist", experience: "7 Years", fee: "$30", image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=600&auto=format&fit=crop" },
+    { name: "Dr. Ime D. Aris", specialization: "Orthopedic", experience: "12 Years", fee: "$10", image: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=600&auto=format&fit=crop" },
+    { name: "Dr. Ahnaf Karim", specialization: "Pediatrician", experience: "8 Years", fee: "৳650", image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=600&auto=format&fit=crop" },
+    { name: "Dr. Mahfuzur Rahman", specialization: "Dentist", experience: "6 Years", fee: "৳500", image: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=600&auto=format&fit=crop" },
+    { name: "Dr. Rebecca D'M", specialization: "Gynecologist", experience: "11 Years", fee: "$80", image: "https://images.unsplash.com/photo-1651008376811-b90baee60c1f?w=600&auto=format&fit=crop" },
+    { name: "Dr. Rafiqul Islam", specialization: "ENT Specialist", experience: "6 Years", fee: "৳550", image: "https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=600&auto=format&fit=crop" },
+    { name: "Dr. Salsa Martina", specialization: "Psychiatrist", experience: "9 Years", fee: "$70", image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&auto=format&fit=crop" },
+    { name: "Dr. Abdullah Al Mamun", specialization: "Urologist", experience: "13 Years", fee: "৳950", image: "https://images.unsplash.com/photo-1504813184591-01572f98c85f?w=600&auto=format&fit=crop" },
+    { name: "Dr. Jenelia Merrie", specialization: "Eye Specialist", experience: "7 Years", fee: "$60", image: "https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?w=600&auto=format&fit=crop" },
+    { name: "Dr. Sohanur Rahman", specialization: "Medicine Specialist", experience: "15 Years", fee: "৳900", image: "https://images.unsplash.com/photo-1584467735871-8e85353a8413?w=600&auto=format&fit=crop" },
   ];
 
   return (
-    <section className="bg-slate-50 py-20">
+    <section className="bg-gradient-to-br from-cyan-50 via-white to-blue-50 py-20">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-12">
+        <div className="text-center mb-14">
           <p className="text-cyan-600 font-semibold">Trusted Healthcare Experts</p>
-          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mt-2">
+          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mt-2">
             Featured Doctors
           </h2>
-          <p className="text-slate-500 mt-4 max-w-2xl mx-auto">
+          <p className="text-slate-500 mt-4">
             Meet experienced doctors and book appointments with confidence.
           </p>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {doctors.map((doctor, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-3xl shadow-lg hover:shadow-2xl border border-slate-100 overflow-hidden transition duration-300 hover:-translate-y-2"
-            >
-              <div className={`h-28 bg-gradient-to-r ${doctor.color}`}></div>
+            <div key={index} className="bg-white rounded-3xl shadow-lg border overflow-hidden hover:-translate-y-2 hover:shadow-2xl transition">
+              <img
+                src={doctor.image}
+                alt={doctor.name}
+                className="w-full h-64 object-cover object-top"
+              />
 
-              <div className="p-6 -mt-12">
-                <div className="w-20 h-20 rounded-2xl bg-white shadow-lg flex items-center justify-center text-3xl font-bold text-cyan-700 border">
-                  {doctor.name.split(" ")[1][0]}
-                </div>
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-slate-900">{doctor.name}</h3>
+                <p className="text-cyan-600 font-semibold">{doctor.specialization}</p>
+                <p className="mt-4 text-slate-600">Experience: {doctor.experience}</p>
+                <p className="text-slate-600">Consultation Fee: {doctor.fee}</p>
 
-                <h3 className="text-xl font-bold text-slate-900 mt-5">
-                  {doctor.name}
-                </h3>
-
-                <p className="text-cyan-600 font-semibold mt-1">
-                  {doctor.specialization}
-                </p>
-
-                <div className="mt-5 space-y-2 text-slate-600">
-                  <p>Experience: {doctor.experience}</p>
-                  <p>Consultation Fee: {doctor.fee}</p>
-                </div>
-
-                <button className="mt-6 w-full bg-gradient-to-r from-cyan-600 to-blue-700 text-white py-3 rounded-xl font-semibold hover:opacity-90 transition">
+                <button className="mt-6 w-full bg-gradient-to-r from-cyan-500 to-blue-700 text-white py-3 rounded-xl font-semibold">
                   View Profile
                 </button>
               </div>
