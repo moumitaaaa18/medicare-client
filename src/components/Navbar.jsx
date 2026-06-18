@@ -9,6 +9,7 @@ const Navbar = () => {
       <NavLink to="/about" className="hover:text-teal-600">About Us</NavLink>
       <NavLink to="/contact" className="hover:text-teal-600">Contact Us</NavLink>
       <NavLink to="/dashboard" className="hover:text-teal-600">Dashboard</NavLink>
+      <NavLink to="/find-doctors">Find Doctors</NavLink>
     </>
   );
 
@@ -36,6 +37,7 @@ const Navbar = () => {
           >
             Register
           </Link>
+
           <FaUserCircle className="text-2xl text-slate-500" />
         </div>
       </nav>
