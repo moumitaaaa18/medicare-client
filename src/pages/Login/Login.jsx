@@ -3,14 +3,14 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../providers/AuthProvider";
 
 const Login = () => {
-  const { loginUser, googleLogin } = useContext(AuthContext);
+  const { loginUser, googleLogin, refreshUser } = useContext(AuthContext);
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/";
+  const from = location.state?.from?.pathname || "/dashboard";
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -18,22 +18,26 @@ const Login = () => {
     const email = form.email.value;
     const password = form.password.value;
 
-    loginUser(email, password)
-      .then(() => {
-        form.reset();
-        navigate(from, { replace: true });
-      })
-      .catch((err) => setError(err.message));
+    const result = await loginUser(email, password);
+
+    if (result?.error) {
+      setError(result.error.message);
+      return;
+    }
+
+    
+    form.reset();
+    navigate(from, { replace: true });
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     setError("");
 
-    googleLogin()
-      .then(() => {
-        navigate(from, { replace: true });
-      })
-      .catch((err) => setError(err.message));
+    const result = await googleLogin();
+
+    if (result?.error) {
+      setError(result.error.message);
+    }
   };
 
   return (

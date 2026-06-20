@@ -1,57 +1,65 @@
 import { createContext, useEffect, useState } from "react";
-import {
-  GoogleAuthProvider,
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-  updateProfile,
-} from "firebase/auth";
-import { auth } from "../firebase/firebase.config";
+import { authClient } from "../lib/auth-client";
 
 export const AuthContext = createContext(null);
-
-const googleProvider = new GoogleAuthProvider();
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const createUser = (email, password) => {
+  const createUser = async (name, email, password, photo) => {
     setLoading(true);
-    return createUserWithEmailAndPassword(auth, email, password);
+
+    const result = await authClient.signUp.email({
+      name,
+      email,
+      password,
+      image: photo,
+    });
+
+    await checkSession();
+    return result;
   };
 
-  const loginUser = (email, password) => {
+  const loginUser = async (email, password) => {
     setLoading(true);
-    return signInWithEmailAndPassword(auth, email, password);
+
+    const result = await authClient.signIn.email({
+      email,
+      password,
+    });
+
+    await checkSession();
+    return result;
   };
 
-  const googleLogin = () => {
+  const logoutUser = async () => {
     setLoading(true);
-    return signInWithPopup(auth, googleProvider);
+    await authClient.signOut();
+    setUser(null);
+    setLoading(false);
   };
 
-  const updateUserProfile = (name, photo) => {
-    return updateProfile(auth.currentUser, {
-      displayName: name,
-      photoURL: photo,
+  const googleLogin = async () => {
+    return authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/dashboard",
     });
   };
 
-  const logoutUser = () => {
-    setLoading(true);
-    return signOut(auth);
+  const checkSession = async () => {
+    try {
+      const session = await authClient.getSession();
+      setUser(session?.data?.user || null);
+    } catch (error) {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    checkSession();
   }, []);
 
   const authInfo = {
@@ -59,9 +67,8 @@ const AuthProvider = ({ children }) => {
     loading,
     createUser,
     loginUser,
-    googleLogin,
-    updateUserProfile,
     logoutUser,
+    googleLogin,
   };
 
   return (
