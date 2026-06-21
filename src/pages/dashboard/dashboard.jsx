@@ -3,215 +3,198 @@ import { AuthContext } from "../../providers/AuthProvider";
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
-
   const [dbUser, setDbUser] = useState(null);
   const [appointments, setAppointments] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState(null);
 
-  const loadDashboardData = async () => {
+  const loadData = async () => {
     if (!user?.email) return;
-
     setLoading(true);
 
-    try {
-      const userRes = await fetch(
-        `http://localhost:5000/users/${encodeURIComponent(user.email)}`
-      );
-      const userData = await userRes.json();
-      setDbUser(userData);
-    } catch {
-      setDbUser(null);
-    }
+    const userRes = await fetch(`http://localhost:5000/users/${user.email}`);
+    const userText = await userRes.text();
+    const userData = userText ? JSON.parse(userText) : null;
+    setDbUser(userData);
 
-    try {
-      const appRes = await fetch(
-        `http://localhost:5000/appointments/${encodeURIComponent(user.email)}`
-      );
+    const role = userData?.role || "patient";
+
+    if (role === "admin") {
+      const usersRes = await fetch("http://localhost:5000/users");
+      const usersData = await usersRes.json();
+      setAllUsers(usersData);
+
+      const appRes = await fetch("http://localhost:5000/appointments");
       const appData = await appRes.json();
+      setAppointments(appData);
+
+      const statsRes = await fetch("http://localhost:5000/dashboard-stats");
+      const statsData = await statsRes.json();
+      setStats(statsData);
+    } else {
+      const appRes = await fetch(`http://localhost:5000/appointments/${user.email}`);
+      const appText = await appRes.text();
+      const appData = appText ? JSON.parse(appText) : [];
       setAppointments(Array.isArray(appData) ? appData : []);
-    } catch {
-      setAppointments([]);
     }
 
     setLoading(false);
   };
 
   useEffect(() => {
-    loadDashboardData();
+    loadData();
   }, [user?.email]);
 
-  const handleCancel = async (id) => {
-    const confirmCancel = window.confirm("Are you sure you want to cancel this appointment?");
-    if (!confirmCancel) return;
-
+  const updateAppointment = async (id, status) => {
     await fetch(`http://localhost:5000/appointments/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        appointmentStatus: "cancelled",
-      }),
+      body: JSON.stringify({ appointmentStatus: status }),
     });
-
-    loadDashboardData();
+    loadData();
   };
 
-  const handleReschedule = async (e, id) => {
-    e.preventDefault();
+  const cancelAppointment = async (id) => {
+    await updateAppointment(id, "cancelled");
+  };
 
-    const form = e.target;
-
-    await fetch(`http://localhost:5000/appointments/${id}`, {
+  const updateUserStatus = async (id, status) => {
+    await fetch(`http://localhost:5000/users/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        appointmentDate: form.appointmentDate.value,
-        appointmentTime: form.appointmentTime.value,
-        appointmentStatus: "rescheduled",
-      }),
+      body: JSON.stringify({ status }),
     });
-
-    setEditingId(null);
-    loadDashboardData();
+    loadData();
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-cyan-50">
-        <p className="text-xl font-semibold text-cyan-700">
-          Loading dashboard...
-        </p>
+        <p className="text-xl font-semibold text-cyan-700">Loading dashboard...</p>
       </div>
     );
   }
 
   const role = dbUser?.role || "patient";
-  const displayName = dbUser?.name || user?.name || user?.email || "User";
+  const displayName = dbUser?.name || user?.name || user?.email;
 
-  const upcomingAppointments = appointments.filter(
-    (item) =>
-      item.appointmentStatus !== "cancelled" &&
-      item.appointmentStatus !== "completed"
-  );
+  if (role === "admin") {
+    return (
+      <section className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-blue-50 px-4 py-10">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-8">
+            <p className="text-cyan-600 font-semibold">Admin Dashboard</p>
+            <h1 className="text-4xl font-bold mt-2">Welcome, Admin</h1>
+            <p className="text-slate-500 mt-2">{user?.email}</p>
+          </div>
 
-  const cancelledAppointments = appointments.filter(
-    (item) => item.appointmentStatus === "cancelled"
-  );
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+            <Card title="Total Users" value={stats.totalUsers || 0} />
+            <Card title="Total Doctors" value={stats.totalDoctors || 0} />
+            <Card title="Total Patients" value={stats.totalPatients || 0} />
+            <Card title="Total Appointments" value={stats.totalAppointments || 0} />
+          </div>
 
-  const totalPaid = appointments.filter(
-    (item) => item.paymentStatus === "paid"
-  ).length;
+          <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6 mt-8">
+            <h2 className="text-2xl font-bold">Manage Appointments</h2>
+
+            <div className="mt-6 space-y-4">
+              {appointments.map((item) => (
+                <div key={item._id} className="border rounded-2xl p-5 bg-cyan-50">
+                  <h3 className="font-bold text-lg">{item.doctorName}</h3>
+                  <p>Patient: {item.patientName}</p>
+                  <p>Email: {item.patientEmail}</p>
+                  <p>Date: {item.appointmentDate}</p>
+                  <p>Time: {item.appointmentTime}</p>
+                  <p>Status: {item.appointmentStatus}</p>
+
+                  <div className="flex flex-wrap gap-3 mt-4">
+                    <button onClick={() => updateAppointment(item._id, "approved")} className="px-4 py-2 bg-green-500 text-white rounded-xl">
+                      Approve
+                    </button>
+                    <button onClick={() => updateAppointment(item._id, "completed")} className="px-4 py-2 bg-blue-500 text-white rounded-xl">
+                      Complete
+                    </button>
+                    <button onClick={() => updateAppointment(item._id, "cancelled")} className="px-4 py-2 bg-red-500 text-white rounded-xl">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6 mt-8">
+            <h2 className="text-2xl font-bold">Manage Users</h2>
+
+            <div className="mt-6 space-y-4">
+              {allUsers.map((item) => (
+                <div key={item._id} className="border rounded-2xl p-5 flex flex-col md:flex-row md:justify-between gap-4">
+                  <div>
+                    <h3 className="font-bold">{item.name || "N/A"}</h3>
+                    <p>{item.email}</p>
+                    <p>Role: {item.role}</p>
+                    <p>Status: {item.status}</p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button onClick={() => updateUserStatus(item._id, "active")} className="px-4 py-2 bg-green-500 text-white rounded-xl">
+                      Active
+                    </button>
+                    <button onClick={() => updateUserStatus(item._id, "suspended")} className="px-4 py-2 bg-red-500 text-white rounded-xl">
+                      Suspend
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-blue-50 px-4 py-10">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-8">
           <p className="text-cyan-600 font-semibold">Patient Dashboard</p>
-          <h1 className="text-4xl font-bold text-slate-900 mt-2">
-            Welcome, {displayName}
-          </h1>
+          <h1 className="text-4xl font-bold mt-2">Welcome, {displayName}</h1>
           <p className="text-slate-500 mt-2">{user?.email}</p>
-          <p className="text-sm mt-2">
-            Role: <span className="font-semibold text-cyan-700">{role}</span>
-          </p>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-          <Card title="Upcoming Appointments" value={upcomingAppointments.length} />
+          <Card title="Upcoming Appointments" value={appointments.filter(a => a.appointmentStatus !== "cancelled").length} />
           <Card title="Appointment History" value={appointments.length} />
-          <Card title="Paid Appointments" value={totalPaid} />
-          <Card title="Cancelled" value={cancelledAppointments.length} />
+          <Card title="Paid Appointments" value={appointments.filter(a => a.paymentStatus === "paid").length} />
+          <Card title="Cancelled" value={appointments.filter(a => a.appointmentStatus === "cancelled").length} />
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 mt-8">
           <div className="lg:col-span-2 bg-white rounded-3xl shadow-md border border-cyan-100 p-6">
-            <h2 className="text-2xl font-bold text-slate-900">
-              My Appointments
-            </h2>
+            <h2 className="text-2xl font-bold">My Appointments</h2>
 
             <div className="mt-6 space-y-4">
               {appointments.length === 0 ? (
-                <p className="text-slate-500">No appointment booked yet.</p>
+                <p>No appointment booked yet.</p>
               ) : (
                 appointments.map((item) => (
-                  <div
-                    key={item._id}
-                    className="border border-cyan-100 rounded-2xl p-5 bg-cyan-50"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-slate-900">
-                          {item.doctorName}
-                        </h3>
-                        <p className="text-cyan-700 font-semibold">
-                          {item.specialization}
-                        </p>
-                        <p className="text-sm text-slate-600 mt-2">
-                          Date: {item.appointmentDate}
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          Time: {item.appointmentTime}
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          Symptoms: {item.symptoms}
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          Fee: ৳{item.consultationFee}
-                        </p>
-                      </div>
+                  <div key={item._id} className="border rounded-2xl p-5 bg-cyan-50">
+                    <h3 className="text-xl font-bold">{item.doctorName}</h3>
+                    <p className="text-cyan-700">{item.specialization}</p>
+                    <p>Date: {item.appointmentDate}</p>
+                    <p>Time: {item.appointmentTime}</p>
+                    <p>Symptoms: {item.symptoms}</p>
+                    <p>Fee: ৳{item.consultationFee}</p>
+                    <p>Status: {item.appointmentStatus}</p>
+                    <p>Payment: {item.paymentStatus}</p>
 
-                      <div className="space-y-2">
-                        <StatusBadge label={item.appointmentStatus} />
-                        <PaymentBadge label={item.paymentStatus} />
-                      </div>
-                    </div>
-
-                    {editingId === item._id && (
-                      <form
-                        onSubmit={(e) => handleReschedule(e, item._id)}
-                        className="mt-5 grid md:grid-cols-3 gap-3"
-                      >
-                        <input
-                          name="appointmentDate"
-                          type="date"
-                          required
-                          className="px-4 py-3 border rounded-xl"
-                        />
-
-                        <input
-                          name="appointmentTime"
-                          type="time"
-                          required
-                          className="px-4 py-3 border rounded-xl"
-                        />
-
-                        <button className="bg-cyan-600 text-white rounded-xl font-semibold">
-                          Save
-                        </button>
-                      </form>
+                    {item.appointmentStatus !== "cancelled" && (
+                      <button onClick={() => cancelAppointment(item._id)} className="mt-4 px-4 py-2 bg-red-500 text-white rounded-xl">
+                        Cancel Appointment
+                      </button>
                     )}
-
-                    <div className="flex flex-wrap gap-3 mt-5">
-                      {item.appointmentStatus !== "cancelled" && (
-                        <>
-                          <button
-                            onClick={() =>
-                              setEditingId(editingId === item._id ? null : item._id)
-                            }
-                            className="px-4 py-2 rounded-xl border border-cyan-500 text-cyan-700 font-semibold"
-                          >
-                            Reschedule
-                          </button>
-
-                          <button
-                            onClick={() => handleCancel(item._id)}
-                            className="px-4 py-2 rounded-xl bg-red-500 text-white font-semibold"
-                          >
-                            Cancel
-                          </button>
-                        </>
-                      )}
-                    </div>
                   </div>
                 ))
               )}
@@ -220,38 +203,17 @@ const Dashboard = () => {
 
           <div className="space-y-6">
             <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6">
-              <h2 className="text-2xl font-bold text-slate-900">
-                My Profile
-              </h2>
-
-              <div className="mt-6 space-y-3 text-slate-600">
-                <p>Name: {displayName}</p>
-                <p>Email: {user?.email}</p>
-                <p>Role: {role}</p>
-                <p>Status: {dbUser?.status || "active"}</p>
-              </div>
+              <h2 className="text-2xl font-bold">My Profile</h2>
+              <p className="mt-4">Name: {displayName}</p>
+              <p>Email: {user?.email}</p>
+              <p>Role: {role}</p>
+              <p>Status: {dbUser?.status || "active"}</p>
             </div>
 
             <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6">
-              <h2 className="text-2xl font-bold text-slate-900">
-                Payment History
-              </h2>
-
-              <div className="mt-6 space-y-3 text-slate-600">
-                <p>Paid Appointments: {totalPaid}</p>
-                <p>Total Appointments: {appointments.length}</p>
-                <p>Payment Gateway: Stripe pending</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6">
-              <h2 className="text-2xl font-bold text-slate-900">
-                My Reviews
-              </h2>
-
-              <p className="mt-4 text-slate-500">
-                Review add/update/delete will be added in next step.
-              </p>
+              <h2 className="text-2xl font-bold">Payment History</h2>
+              <p className="mt-4">Total Appointments: {appointments.length}</p>
+              <p>Payment Gateway: Stripe pending</p>
             </div>
           </div>
         </div>
@@ -266,47 +228,5 @@ const Card = ({ title, value }) => (
     <h3 className="text-3xl font-bold text-cyan-700 mt-3">{value}</h3>
   </div>
 );
-
-const StatusBadge = ({ label }) => {
-  const status = label || "pending";
-
-  return (
-    <p className="text-sm">
-      Status:{" "}
-      <span
-        className={`px-3 py-1 rounded-full font-semibold ${
-          status === "cancelled"
-            ? "bg-red-100 text-red-600"
-            : status === "completed"
-            ? "bg-green-100 text-green-600"
-            : status === "rescheduled"
-            ? "bg-yellow-100 text-yellow-700"
-            : "bg-blue-100 text-blue-600"
-        }`}
-      >
-        {status}
-      </span>
-    </p>
-  );
-};
-
-const PaymentBadge = ({ label }) => {
-  const status = label || "unpaid";
-
-  return (
-    <p className="text-sm">
-      Payment:{" "}
-      <span
-        className={`px-3 py-1 rounded-full font-semibold ${
-          status === "paid"
-            ? "bg-green-100 text-green-600"
-            : "bg-orange-100 text-orange-600"
-        }`}
-      >
-        {status}
-      </span>
-    </p>
-  );
-};
 
 export default Dashboard;
