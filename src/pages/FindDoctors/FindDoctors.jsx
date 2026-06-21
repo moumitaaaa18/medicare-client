@@ -1,46 +1,25 @@
-import { useState } from "react";
-
-const doctors = [
-  { id: 1, name: "Dr. Sam Rene", specialization: "Cardiologist", experience: 10, fee: 20, rating: 4.9, image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&auto=format&fit=crop" },
-  { id: 2, name: "Dr. Tanvir Hasan", specialization: "Neurologist", experience: 9, fee: 700, rating: 4.7, image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=600&auto=format&fit=crop" },
-  { id: 3, name: "Dr. Faria", specialization: "Dermatologist", experience: 7, fee: 30, rating: 4.8, image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=600&auto=format&fit=crop" },
-  { id: 4, name: "Dr. Ime D. Aris", specialization: "Orthopedic", experience: 12, fee: 10, rating: 4.6, image: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=600&auto=format&fit=crop" },
-  { id: 5, name: "Dr. Ahnaf Karim", specialization: "Pediatrician", experience: 8, fee: 650, rating: 4.5, image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=600&auto=format&fit=crop" },
-  { id: 6, name: "Dr. Mahfuzur Rahman", specialization: "Dentist", experience: 6, fee: 500, rating: 4.4, image: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=600&auto=format&fit=crop" },
-  { id: 7, name: "Dr. Rebecca D'M", specialization: "Gynecologist", experience: 11, fee: 80, rating: 4.9, image: "https://images.unsplash.com/photo-1651008376811-b90baee60c1f?w=600&auto=format&fit=crop" },
-  { id: 8, name: "Dr. Rafiqul Islam", specialization: "ENT Specialist", experience: 6, fee: 550, rating: 4.3, image: "https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=600&auto=format&fit=crop" },
-  { id: 9, name: "Dr. Salsa Martina", specialization: "Psychiatrist", experience: 9, fee: 70, rating: 4.8, image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&auto=format&fit=crop" },
-  { id: 10, name: "Dr. Abdullah Al Mamun", specialization: "Urologist", experience: 13, fee: 950, rating: 4.7, image: "https://images.unsplash.com/photo-1504813184591-01572f98c85f?w=600&auto=format&fit=crop" },
-  { id: 11, name: "Dr. Jenelia Merrie", specialization: "Eye Specialist", experience: 7, fee: 60, rating: 4.6, image: "https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?w=600&auto=format&fit=crop" },
-  { id: 12, name: "Dr. Sohanur Rahman", specialization: "Medicine Specialist", experience: 15, fee: 900, rating: 4.9, image: "https://images.unsplash.com/photo-1584467735871-8e85353a8413?w=600&auto=format&fit=crop" },
-];
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 const FindDoctors = () => {
+  const [doctors, setDoctors] = useState([]);
   const [search, setSearch] = useState("");
   const [sortType, setSortType] = useState("");
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  const doctorsPerPage = 6;
-
-  const filteredDoctors = doctors
-    .filter(
-      (doctor) =>
-        doctor.name.toLowerCase().includes(search.toLowerCase()) ||
-        doctor.specialization.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => {
+    fetch(
+      `http://localhost:5000/doctors?search=${search}&sort=${sortType}&page=${page}&limit=6`
     )
-    .sort((a, b) => {
-      if (sortType === "fee") return a.fee - b.fee;
-      if (sortType === "experience") return b.experience - a.experience;
-      if (sortType === "rating") return b.rating - a.rating;
-      return 0;
-    });
-
-  const totalPages = Math.ceil(filteredDoctors.length / doctorsPerPage);
-  const startIndex = (page - 1) * doctorsPerPage;
-  const currentDoctors = filteredDoctors.slice(
-    startIndex,
-    startIndex + doctorsPerPage
-  );
+      .then((res) => res.json())
+      .then((data) => {
+        setDoctors(data.doctors || []);
+        setTotalPages(data.totalPages || 1);
+        setTotal(data.total || 0);
+      });
+  }, [search, sortType, page]);
 
   return (
     <section className="bg-gradient-to-br from-cyan-50 via-white to-blue-50 py-16 min-h-screen">
@@ -69,7 +48,10 @@ const FindDoctors = () => {
 
           <select
             value={sortType}
-            onChange={(e) => setSortType(e.target.value)}
+            onChange={(e) => {
+              setSortType(e.target.value);
+              setPage(1);
+            }}
             className="w-full px-5 py-3 border border-cyan-100 rounded-xl outline-none focus:ring-2 focus:ring-cyan-400"
           >
             <option value="">Sort Doctors</option>
@@ -80,57 +62,66 @@ const FindDoctors = () => {
         </div>
 
         <p className="mb-6 text-slate-600 font-medium">
-          Showing {currentDoctors.length} of {filteredDoctors.length} doctors
+          Showing {doctors.length} of {total} doctors
         </p>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {currentDoctors.map((doctor) => (
+          {doctors.map((doctor) => (
             <div
-              key={doctor.id}
+              key={doctor._id}
               className="bg-white rounded-3xl shadow-lg border overflow-hidden hover:-translate-y-2 hover:shadow-2xl transition duration-300"
             >
               <img
-                src={doctor.image}
-                alt={doctor.name}
+                src={doctor.profileImage || doctor.image || doctor.img}
+                alt={doctor.doctorName || doctor.name}
                 className="w-full h-64 object-cover object-top"
               />
 
               <div className="p-6">
                 <h3 className="text-xl font-bold text-slate-900">
-                  {doctor.name}
+                  {doctor.doctorName || doctor.name}
                 </h3>
 
                 <p className="text-cyan-600 font-semibold">
-                  {doctor.specialization}
+                  {doctor.specialization || doctor.speciality}
                 </p>
 
                 <p className="mt-4 text-slate-600">
-                  Experience: {doctor.experience} Years
+                  Experience: {doctor.experience}{" "}
+                  {typeof doctor.experience === "number" ? "Years" : ""}
                 </p>
 
                 <p className="text-slate-600">
-                  Consultation Fee:{" "}
-                  {doctor.fee > 100 ? `৳${doctor.fee}` : `$${doctor.fee}`}
+                  Consultation Fee: ৳{doctor.consultationFee || doctor.fee}
                 </p>
 
-                <p className="text-slate-600">Rating: ⭐ {doctor.rating}</p>
+                <p className="text-slate-600">
+                  Rating: ⭐ {doctor.averageRating || doctor.rating || 4.5}
+                </p>
 
                 <div className="mt-6 flex gap-3">
-                  <a
-                    href={`/doctor-details/${doctor.id}`}
+                  <Link
+                    to={`/doctor-details/${doctor._id}`}
                     className="flex-1 border border-cyan-500 text-cyan-700 py-3 rounded-xl font-semibold hover:bg-cyan-50 transition text-center"
                   >
                     View Profile
-                  </a>
+                  </Link>
 
-                  <button className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-700 text-white py-3 rounded-xl font-semibold hover:opacity-90 transition">
+                  <Link
+                    to={`/doctor-details/${doctor._id}`}
+                    className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-700 text-white py-3 rounded-xl font-semibold hover:opacity-90 transition text-center"
+                  >
                     Book Now
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>
           ))}
         </div>
+
+        {doctors.length === 0 && (
+          <p className="text-center mt-10 text-slate-500">No doctor found.</p>
+        )}
 
         {totalPages > 1 && (
           <div className="flex justify-center gap-3 mt-12">
