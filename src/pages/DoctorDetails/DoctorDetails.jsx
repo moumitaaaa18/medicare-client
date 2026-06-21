@@ -1,4 +1,6 @@
-import { useParams } from "react-router-dom";
+import { useContext, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { AuthContext } from "../../providers/AuthProvider";
 
 const doctors = [
   { id: 1, name: "Dr. Sam Rene", specialization: "Cardiologist", experience: 10, fee: 20, rating: 4.9, image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&auto=format&fit=crop", status: "Available Today", availableDays: "Sunday, Tuesday, Thursday", availableSlots: "10:00 AM - 2:00 PM" },
@@ -17,11 +19,56 @@ const doctors = [
 
 const DoctorDetails = () => {
   const { id } = useParams();
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
+
   const doctor = doctors.find((item) => item.id === Number(id));
 
   if (!doctor) {
     return <div className="text-center py-20 text-3xl font-bold">Doctor Not Found</div>;
   }
+
+  const handleAppointment = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    const form = e.target;
+
+    const appointment = {
+      patientEmail: user.email,
+      patientName: user.name || user.email,
+      doctorId: doctor.id,
+      doctorName: doctor.name,
+      specialization: doctor.specialization,
+      consultationFee: doctor.fee,
+      appointmentDate: form.appointmentDate.value,
+      appointmentTime: form.appointmentTime.value,
+      symptoms: form.symptoms.value,
+    };
+
+    const res = await fetch("http://localhost:5000/appointments", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(appointment),
+    });
+
+    const data = await res.json();
+
+    if (data.insertedId) {
+      form.reset();
+      navigate("/dashboard");
+    } else {
+      setError("Appointment booking failed. Please try again.");
+    }
+  };
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-blue-50 py-16">
@@ -41,27 +88,10 @@ const DoctorDetails = () => {
             </p>
 
             <div className="grid sm:grid-cols-2 gap-4 mt-8">
-              <div className="bg-cyan-50 p-4 rounded-2xl">
-                <p className="text-slate-500">Experience</p>
-                <h3 className="font-bold text-slate-900">{doctor.experience} Years</h3>
-              </div>
-
-              <div className="bg-blue-50 p-4 rounded-2xl">
-                <p className="text-slate-500">Consultation Fee</p>
-                <h3 className="font-bold text-slate-900">
-                  {doctor.fee > 100 ? `৳${doctor.fee}` : `$${doctor.fee}`}
-                </h3>
-              </div>
-
-              <div className="bg-emerald-50 p-4 rounded-2xl">
-                <p className="text-slate-500">Rating</p>
-                <h3 className="font-bold text-slate-900">⭐ {doctor.rating}</h3>
-              </div>
-
-              <div className="bg-indigo-50 p-4 rounded-2xl">
-                <p className="text-slate-500">Status</p>
-                <h3 className="font-bold text-slate-900">{doctor.status}</h3>
-              </div>
+              <Info title="Experience" value={`${doctor.experience} Years`} />
+              <Info title="Consultation Fee" value={doctor.fee > 100 ? `৳${doctor.fee}` : `$${doctor.fee}`} />
+              <Info title="Rating" value={`⭐ ${doctor.rating}`} />
+              <Info title="Status" value={doctor.status} />
             </div>
 
             <div className="mt-8 space-y-4 text-slate-600">
@@ -70,13 +100,47 @@ const DoctorDetails = () => {
               <p><span className="font-semibold text-slate-900">Available Slots:</span> {doctor.availableSlots}</p>
             </div>
 
-            <button className="mt-8 w-full bg-gradient-to-r from-cyan-500 to-blue-700 text-white py-4 rounded-2xl font-semibold hover:opacity-90 transition">
-              Book Appointment
-            </button>
+            <form onSubmit={handleAppointment} className="mt-8 space-y-4">
+              <input
+                name="appointmentDate"
+                type="date"
+                required
+                className="w-full px-4 py-3 border border-cyan-200 rounded-xl outline-none"
+              />
+
+              <input
+                name="appointmentTime"
+                type="time"
+                required
+                className="w-full px-4 py-3 border border-cyan-200 rounded-xl outline-none"
+              />
+
+              <textarea
+                name="symptoms"
+                placeholder="Write your symptoms"
+                required
+                className="w-full px-4 py-3 border border-cyan-200 rounded-xl outline-none min-h-28"
+              />
+
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+
+              <button className="w-full bg-gradient-to-r from-cyan-500 to-blue-700 text-white py-4 rounded-2xl font-semibold hover:opacity-90 transition">
+                Book Appointment
+              </button>
+            </form>
           </div>
         </div>
       </div>
     </section>
+  );
+};
+
+const Info = ({ title, value }) => {
+  return (
+    <div className="bg-cyan-50 p-4 rounded-2xl">
+      <p className="text-slate-500">{title}</p>
+      <h3 className="font-bold text-slate-900">{value}</h3>
+    </div>
   );
 };
 
