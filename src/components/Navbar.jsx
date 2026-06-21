@@ -30,10 +30,10 @@ const Navbar = () => {
         <div className="flex items-center gap-3">
           {user ? (
             <>
-              {user.photoURL ? (
-                <img
-                  src={user.photoURL}
-                  alt={user.displayName || "User"}
+              {user.image ? (
+  <img
+    src={user.image}
+    alt={user.name || "User"}
                   className="w-10 h-10 rounded-full object-cover border"
                 />
               ) : (

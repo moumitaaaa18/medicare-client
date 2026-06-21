@@ -61,6 +61,9 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     checkSession();
   }, []);
+  const refreshUser = async () => {
+  await checkSession();
+};
 
   const authInfo = {
     user,
@@ -69,6 +72,7 @@ const AuthProvider = ({ children }) => {
     loginUser,
     logoutUser,
     googleLogin,
+    refreshUser,
   };
 
   return (

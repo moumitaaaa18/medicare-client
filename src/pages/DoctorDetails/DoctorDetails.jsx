@@ -30,45 +30,47 @@ const DoctorDetails = () => {
   }
 
   const handleAppointment = async (e) => {
-    e.preventDefault();
-    setError("");
+  e.preventDefault();
+  setError("");
 
-    if (!user) {
-      navigate("/login");
-      return;
-    }
+  if (!user?.email) {
+    navigate("/login");
+    return;
+  }
 
-    const form = e.target;
+  const form = e.target;
 
-    const appointment = {
-      patientEmail: user.email,
-      patientName: user.name || user.email,
-      doctorId: doctor.id,
-      doctorName: doctor.name,
-      specialization: doctor.specialization,
-      consultationFee: doctor.fee,
-      appointmentDate: form.appointmentDate.value,
-      appointmentTime: form.appointmentTime.value,
-      symptoms: form.symptoms.value,
-    };
-
-    const res = await fetch("http://localhost:5000/appointments", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(appointment),
-    });
-
-    const data = await res.json();
-
-    if (data.insertedId) {
-      form.reset();
-      navigate("/dashboard");
-    } else {
-      setError("Appointment booking failed. Please try again.");
-    }
+  const appointment = {
+    patientEmail: user.email,
+    patientName: user.name || user.email,
+    doctorId: doctor.id,
+    doctorName: doctor.name,
+    specialization: doctor.specialization,
+    consultationFee: doctor.fee,
+    appointmentDate: form.appointmentDate.value,
+    appointmentTime: form.appointmentTime.value,
+    symptoms: form.symptoms.value,
   };
+
+  console.log("booking appointment:", appointment);
+
+  const res = await fetch("http://localhost:5000/appointments", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(appointment),
+  });
+
+  const data = await res.json();
+
+  if (data.insertedId) {
+    form.reset();
+    navigate("/dashboard");
+  } else {
+    setError("Appointment booking failed. Please try again.");
+  }
+};
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-blue-50 py-16">
