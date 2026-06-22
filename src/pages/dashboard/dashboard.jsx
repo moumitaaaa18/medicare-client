@@ -103,6 +103,8 @@ const Dashboard = () => {
   }
 
   const role = dbUser?.role || "patient";
+  console.log("DB USER =", dbUser);
+console.log("ROLE =", role);
   const displayName = dbUser?.name || user?.name || user?.email || "User";
 
   if (role === "doctor") {
