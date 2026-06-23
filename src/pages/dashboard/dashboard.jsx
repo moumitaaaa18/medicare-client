@@ -453,7 +453,16 @@ const Dashboard = () => {
                       >
                         Cancel Appointment
                       </button>
+
                     )}
+                    {item.paymentStatus !== "paid" && (
+  <button
+    onClick={() => makePayment(item)}
+    className="mt-4 ml-3 px-4 py-2 bg-green-500 text-white rounded-xl"
+  >
+    Pay Now
+  </button>
+)}
                   </div>
                 ))
               )}
