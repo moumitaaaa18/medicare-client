@@ -5,13 +5,13 @@ const Dashboard = () => {
   const { user } = useContext(AuthContext);
   const [dbUser, setDbUser] = useState(null);
   const [appointments, setAppointments] = useState([]);
+  const [prescriptions, setPrescriptions] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     if (!user?.email) return;
-
     setLoading(true);
 
     try {
@@ -56,6 +56,13 @@ const Dashboard = () => {
         const appText = await appRes.text();
         const appData = appText ? JSON.parse(appText) : [];
         setAppointments(Array.isArray(appData) ? appData : []);
+
+        const preRes = await fetch(
+          `http://localhost:5000/prescriptions/${encodeURIComponent(user.email)}`
+        );
+        const preText = await preRes.text();
+        const preData = preText ? JSON.parse(preText) : [];
+        setPrescriptions(Array.isArray(preData) ? preData : []);
       }
     } catch (error) {
       console.log("Dashboard load error:", error);
@@ -74,7 +81,6 @@ const Dashboard = () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ appointmentStatus: status }),
     });
-
     loadData();
   };
 
@@ -88,7 +94,6 @@ const Dashboard = () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ status }),
     });
-
     loadData();
   };
 
@@ -98,8 +103,29 @@ const Dashboard = () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ verificationStatus }),
     });
-
     loadData();
+  };
+
+  const createPrescription = async (item) => {
+    const medicine = prompt("Medicine Name");
+    const advice = prompt("Doctor Advice");
+
+    if (!medicine || !advice) return;
+
+    await fetch("http://localhost:5000/prescriptions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        appointmentId: item._id,
+        patientName: item.patientName,
+        patientEmail: item.patientEmail,
+        doctorName: displayName,
+        medicine,
+        advice,
+      }),
+    });
+
+    alert("Prescription Created Successfully");
   };
 
   if (loading) {
@@ -121,9 +147,7 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto">
           <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-8">
             <p className="text-cyan-600 font-semibold">Doctor Dashboard</p>
-            <h1 className="text-4xl font-bold mt-2">
-              Welcome, Dr. {displayName}
-            </h1>
+            <h1 className="text-4xl font-bold mt-2">Welcome, {displayName}</h1>
             <p className="text-slate-500 mt-2">{user?.email}</p>
             <p className="text-sm mt-2">
               Verification:{" "}
@@ -153,7 +177,10 @@ const Dashboard = () => {
                 <p>No appointment requests found.</p>
               ) : (
                 appointments.map((item) => (
-                  <div key={item._id} className="border rounded-2xl p-5 bg-cyan-50">
+                  <div
+                    key={item._id}
+                    className="border rounded-2xl p-5 bg-cyan-50"
+                  >
                     <h3 className="font-bold text-lg">{item.patientName}</h3>
                     <p>Email: {item.patientEmail}</p>
                     <p>Date: {item.appointmentDate}</p>
@@ -182,18 +209,18 @@ const Dashboard = () => {
                       >
                         Complete
                       </button>
+
+                      <button
+                        onClick={() => createPrescription(item)}
+                        className="px-4 py-2 bg-purple-500 text-white rounded-xl"
+                      >
+                        Create Prescription
+                      </button>
                     </div>
                   </div>
                 ))
               )}
             </div>
-          </div>
-
-          <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6 mt-8">
-            <h2 className="text-2xl font-bold">Prescription Management</h2>
-            <p className="mt-3 text-slate-600">
-              After completing appointment, doctor can create or update prescription.
-            </p>
           </div>
 
           <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6 mt-8">
@@ -282,7 +309,10 @@ const Dashboard = () => {
 
             <div className="mt-6 space-y-4">
               {appointments.map((item) => (
-                <div key={item._id} className="border rounded-2xl p-5 bg-cyan-50">
+                <div
+                  key={item._id}
+                  className="border rounded-2xl p-5 bg-cyan-50"
+                >
                   <h3 className="font-bold text-lg">{item.doctorName}</h3>
                   <p>Patient: {item.patientName}</p>
                   <p>Email: {item.patientEmail}</p>
@@ -297,38 +327,14 @@ const Dashboard = () => {
                     >
                       Approve
                     </button>
+
                     <button
                       onClick={() => updateAppointment(item._id, "completed")}
                       className="px-4 py-2 bg-blue-500 text-white rounded-xl"
                     >
                       Complete
                     </button>
-                    <button
-  onClick={() => {
-    const medicine = prompt("Enter medicine name:");
-    const advice = prompt("Enter doctor advice:");
 
-    if (!medicine || !advice) return;
-
-    fetch("http://localhost:5000/prescriptions", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        appointmentId: item._id,
-        patientName: item.patientName,
-        patientEmail: item.patientEmail,
-        doctorName: displayName,
-        medicine,
-        advice,
-      }),
-    });
-
-    alert("Prescription created successfully");
-  }}
-  className="px-4 py-2 bg-purple-500 text-white rounded-xl"
->
-  Create Prescription
-</button>
                     <button
                       onClick={() => updateAppointment(item._id, "cancelled")}
                       className="px-4 py-2 bg-red-500 text-white rounded-xl"
@@ -365,6 +371,7 @@ const Dashboard = () => {
                     >
                       Active
                     </button>
+
                     <button
                       onClick={() => updateUserStatus(item._id, "suspended")}
                       className="px-4 py-2 bg-red-500 text-white rounded-xl"
@@ -379,7 +386,7 @@ const Dashboard = () => {
 
           <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6 mt-8">
             <h2 className="text-2xl font-bold">Payment Management</h2>
-            <p className="mt-4">View Payment Records</p>
+            <p className="mt-4">Admin can view payment records here.</p>
           </div>
         </div>
       </section>
@@ -426,7 +433,10 @@ const Dashboard = () => {
                 <p>No appointment booked yet.</p>
               ) : (
                 appointments.map((item) => (
-                  <div key={item._id} className="border rounded-2xl p-5 bg-cyan-50">
+                  <div
+                    key={item._id}
+                    className="border rounded-2xl p-5 bg-cyan-50"
+                  >
                     <h3 className="text-xl font-bold">{item.doctorName}</h3>
                     <p className="text-cyan-700">{item.specialization}</p>
                     <p>Date: {item.appointmentDate}</p>
@@ -447,6 +457,29 @@ const Dashboard = () => {
                   </div>
                 ))
               )}
+            </div>
+
+            <div className="mt-10">
+              <h2 className="text-2xl font-bold">My Prescriptions</h2>
+
+              <div className="mt-6 space-y-4">
+                {prescriptions.length === 0 ? (
+                  <p>No prescription found.</p>
+                ) : (
+                  prescriptions.map((item) => (
+                    <div
+                      key={item._id}
+                      className="border rounded-2xl p-5 bg-purple-50"
+                    >
+                      <h3 className="font-bold text-lg">
+                        Doctor: {item.doctorName}
+                      </h3>
+                      <p>Medicine: {item.medicine}</p>
+                      <p>Advice: {item.advice}</p>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 
