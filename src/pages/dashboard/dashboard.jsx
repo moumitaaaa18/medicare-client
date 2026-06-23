@@ -87,6 +87,20 @@ const Dashboard = () => {
   const cancelAppointment = async (id) => {
     await updateAppointment(id, "cancelled");
   };
+  const makePayment = async (appointment) => {
+  await fetch(`http://localhost:5000/appointments/${appointment._id}`, {
+    method: "PATCH",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      paymentStatus: "paid",
+    }),
+  });
+
+  loadData();
+  alert("Payment Successful");
+};
 
   const updateUserStatus = async (id, status) => {
     await fetch(`http://localhost:5000/users/${id}`, {
