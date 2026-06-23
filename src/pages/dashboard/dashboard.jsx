@@ -22,12 +22,12 @@ const Dashboard = () => {
       const userData = userText ? JSON.parse(userText) : null;
       setDbUser(userData);
 
-      const role = userData?.role || "patient";
+      const role = userData?.role?.toLowerCase() || "patient";
 
       if (role === "admin") {
         const usersRes = await fetch("http://localhost:5000/users");
         const usersData = await usersRes.json();
-        setAllUsers(usersData);
+        setAllUsers(Array.isArray(usersData) ? usersData : []);
 
         const appRes = await fetch("http://localhost:5000/appointments");
         const appData = await appRes.json();
@@ -35,7 +35,7 @@ const Dashboard = () => {
 
         const statsRes = await fetch("http://localhost:5000/dashboard-stats");
         const statsData = await statsRes.json();
-        setStats(statsData);
+        setStats(statsData || {});
       } else if (role === "doctor") {
         const appRes = await fetch("http://localhost:5000/appointments");
         const appData = await appRes.json();
@@ -92,6 +92,16 @@ const Dashboard = () => {
     loadData();
   };
 
+  const updateDoctorVerification = async (id, verificationStatus) => {
+    await fetch(`http://localhost:5000/users/${id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ verificationStatus }),
+    });
+
+    loadData();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-cyan-50">
@@ -102,9 +112,7 @@ const Dashboard = () => {
     );
   }
 
-  const role = dbUser?.role || "patient";
-  console.log("DB USER =", dbUser);
-console.log("ROLE =", role);
+  const role = dbUser?.role?.toLowerCase() || "patient";
   const displayName = dbUser?.name || user?.name || user?.email || "User";
 
   if (role === "doctor") {
@@ -117,6 +125,12 @@ console.log("ROLE =", role);
               Welcome, Dr. {displayName}
             </h1>
             <p className="text-slate-500 mt-2">{user?.email}</p>
+            <p className="text-sm mt-2">
+              Verification:{" "}
+              <span className="font-semibold text-orange-600">
+                {dbUser?.verificationStatus || "pending"}
+              </span>
+            </p>
           </div>
 
           <div className="grid sm:grid-cols-3 gap-6 mt-8">
@@ -139,10 +153,7 @@ console.log("ROLE =", role);
                 <p>No appointment requests found.</p>
               ) : (
                 appointments.map((item) => (
-                  <div
-                    key={item._id}
-                    className="border rounded-2xl p-5 bg-cyan-50"
-                  >
+                  <div key={item._id} className="border rounded-2xl p-5 bg-cyan-50">
                     <h3 className="font-bold text-lg">{item.patientName}</h3>
                     <p>Email: {item.patientEmail}</p>
                     <p>Date: {item.appointmentDate}</p>
@@ -181,8 +192,7 @@ console.log("ROLE =", role);
           <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6 mt-8">
             <h2 className="text-2xl font-bold">Prescription Management</h2>
             <p className="mt-3 text-slate-600">
-              After completing appointment, doctor can create or update
-              prescription.
+              After completing appointment, doctor can create or update prescription.
             </p>
           </div>
 
@@ -201,6 +211,10 @@ console.log("ROLE =", role);
   }
 
   if (role === "admin") {
+    const pendingDoctors = allUsers.filter(
+      (u) => u.role === "doctor" && u.verificationStatus === "pending"
+    );
+
     return (
       <section className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-blue-50 px-4 py-10">
         <div className="max-w-7xl mx-auto">
@@ -214,10 +228,53 @@ console.log("ROLE =", role);
             <Card title="Total Users" value={stats.totalUsers || 0} />
             <Card title="Total Doctors" value={stats.totalDoctors || 0} />
             <Card title="Total Patients" value={stats.totalPatients || 0} />
-            <Card
-              title="Total Appointments"
-              value={stats.totalAppointments || 0}
-            />
+            <Card title="Total Appointments" value={stats.totalAppointments || 0} />
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6 mt-8">
+            <h2 className="text-2xl font-bold">Pending Doctor Verification</h2>
+
+            <div className="mt-6 space-y-4">
+              {pendingDoctors.length === 0 ? (
+                <p>No pending doctor request.</p>
+              ) : (
+                pendingDoctors.map((doctor) => (
+                  <div
+                    key={doctor._id}
+                    className="border rounded-2xl p-5 bg-orange-50 flex flex-col md:flex-row md:justify-between gap-4"
+                  >
+                    <div>
+                      <h3 className="font-bold">{doctor.name}</h3>
+                      <p>{doctor.email}</p>
+                      <p>Specialization: {doctor.specialization}</p>
+                      <p>Qualifications: {doctor.qualifications}</p>
+                      <p>Experience: {doctor.experience}</p>
+                      <p>Fee: {doctor.consultationFee}</p>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() =>
+                          updateDoctorVerification(doctor._id, "verified")
+                        }
+                        className="px-4 py-2 bg-green-500 text-white rounded-xl"
+                      >
+                        Verify
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          updateDoctorVerification(doctor._id, "rejected")
+                        }
+                        className="px-4 py-2 bg-red-500 text-white rounded-xl"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
           <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6 mt-8">
@@ -225,10 +282,7 @@ console.log("ROLE =", role);
 
             <div className="mt-6 space-y-4">
               {appointments.map((item) => (
-                <div
-                  key={item._id}
-                  className="border rounded-2xl p-5 bg-cyan-50"
-                >
+                <div key={item._id} className="border rounded-2xl p-5 bg-cyan-50">
                   <h3 className="font-bold text-lg">{item.doctorName}</h3>
                   <p>Patient: {item.patientName}</p>
                   <p>Email: {item.patientEmail}</p>
@@ -249,6 +303,32 @@ console.log("ROLE =", role);
                     >
                       Complete
                     </button>
+                    <button
+  onClick={() => {
+    const medicine = prompt("Enter medicine name:");
+    const advice = prompt("Enter doctor advice:");
+
+    if (!medicine || !advice) return;
+
+    fetch("http://localhost:5000/prescriptions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        appointmentId: item._id,
+        patientName: item.patientName,
+        patientEmail: item.patientEmail,
+        doctorName: displayName,
+        medicine,
+        advice,
+      }),
+    });
+
+    alert("Prescription created successfully");
+  }}
+  className="px-4 py-2 bg-purple-500 text-white rounded-xl"
+>
+  Create Prescription
+</button>
                     <button
                       onClick={() => updateAppointment(item._id, "cancelled")}
                       className="px-4 py-2 bg-red-500 text-white rounded-xl"
@@ -275,6 +355,7 @@ console.log("ROLE =", role);
                     <p>{item.email}</p>
                     <p>Role: {item.role}</p>
                     <p>Status: {item.status}</p>
+                    <p>Verification: {item.verificationStatus || "verified"}</p>
                   </div>
 
                   <div className="flex gap-3">
@@ -345,10 +426,7 @@ console.log("ROLE =", role);
                 <p>No appointment booked yet.</p>
               ) : (
                 appointments.map((item) => (
-                  <div
-                    key={item._id}
-                    className="border rounded-2xl p-5 bg-cyan-50"
-                  >
+                  <div key={item._id} className="border rounded-2xl p-5 bg-cyan-50">
                     <h3 className="text-xl font-bold">{item.doctorName}</h3>
                     <p className="text-cyan-700">{item.specialization}</p>
                     <p>Date: {item.appointmentDate}</p>

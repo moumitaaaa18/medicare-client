@@ -8,7 +8,7 @@ import Contact from "./pages/Contact/Contact";
 import Register from "./pages/Register/Register";
 import Login from "./pages/Login/Login";
 import PrivateRoute from "./routes/PrivateRoute";
-import Dashboard from "./pages/Dashboard/Dashboard";
+import Dashboard from "./pages/dashboard/dashboard";
 
 const router = createBrowserRouter([
   {
