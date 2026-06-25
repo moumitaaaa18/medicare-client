@@ -1,11 +1,13 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../providers/AuthProvider";
+import CheckoutForm from "../Register/CheckoutForm";
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
   const [dbUser, setDbUser] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
@@ -18,51 +20,43 @@ const Dashboard = () => {
       const userRes = await fetch(
         `http://localhost:5000/users/${encodeURIComponent(user.email)}`
       );
-      const userText = await userRes.text();
-      const userData = userText ? JSON.parse(userText) : null;
+      const userData = await userRes.json();
       setDbUser(userData);
 
       const role = userData?.role?.toLowerCase() || "patient";
 
       if (role === "admin") {
         const usersRes = await fetch("http://localhost:5000/users");
-        const usersData = await usersRes.json();
-        setAllUsers(Array.isArray(usersData) ? usersData : []);
+        setAllUsers(await usersRes.json());
 
         const appRes = await fetch("http://localhost:5000/appointments");
-        const appData = await appRes.json();
-        setAppointments(Array.isArray(appData) ? appData : []);
+        setAppointments(await appRes.json());
+
+        const payRes = await fetch("http://localhost:5000/payments");
+        setPayments(await payRes.json());
 
         const statsRes = await fetch("http://localhost:5000/dashboard-stats");
-        const statsData = await statsRes.json();
-        setStats(statsData || {});
+        setStats(await statsRes.json());
       } else if (role === "doctor") {
         const appRes = await fetch("http://localhost:5000/appointments");
         const appData = await appRes.json();
 
-        const doctorAppointments = Array.isArray(appData)
-          ? appData.filter(
-              (item) =>
-                item.doctorEmail === user.email ||
-                item.doctorName === userData?.name
-            )
-          : [];
+        const doctorAppointments = appData.filter(
+          (item) =>
+            item.doctorEmail === user.email || item.doctorName === userData?.name
+        );
 
         setAppointments(doctorAppointments);
       } else {
         const appRes = await fetch(
           `http://localhost:5000/appointments/${encodeURIComponent(user.email)}`
         );
-        const appText = await appRes.text();
-        const appData = appText ? JSON.parse(appText) : [];
-        setAppointments(Array.isArray(appData) ? appData : []);
+        setAppointments(await appRes.json());
 
         const preRes = await fetch(
           `http://localhost:5000/prescriptions/${encodeURIComponent(user.email)}`
         );
-        const preText = await preRes.text();
-        const preData = preText ? JSON.parse(preText) : [];
-        setPrescriptions(Array.isArray(preData) ? preData : []);
+        setPrescriptions(await preRes.json());
       }
     } catch (error) {
       console.log("Dashboard load error:", error);
@@ -87,20 +81,6 @@ const Dashboard = () => {
   const cancelAppointment = async (id) => {
     await updateAppointment(id, "cancelled");
   };
-  const makePayment = async (appointment) => {
-  await fetch(`http://localhost:5000/appointments/${appointment._id}`, {
-    method: "PATCH",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      paymentStatus: "paid",
-    }),
-  });
-
-  loadData();
-  alert("Payment Successful");
-};
 
   const updateUserStatus = async (id, status) => {
     await fetch(`http://localhost:5000/users/${id}`, {
@@ -134,12 +114,14 @@ const Dashboard = () => {
         patientName: item.patientName,
         patientEmail: item.patientEmail,
         doctorName: displayName,
+        doctorEmail: user?.email,
         medicine,
         advice,
       }),
     });
 
     alert("Prescription Created Successfully");
+    loadData();
   };
 
   if (loading) {
@@ -153,7 +135,7 @@ const Dashboard = () => {
   }
 
   const role = dbUser?.role?.toLowerCase() || "patient";
-  const displayName = dbUser?.name || user?.name || user?.email || "User";
+  const displayName = dbUser?.name || user?.email || "User";
 
   if (role === "doctor") {
     return (
@@ -191,59 +173,35 @@ const Dashboard = () => {
                 <p>No appointment requests found.</p>
               ) : (
                 appointments.map((item) => (
-                  <div
-                    key={item._id}
-                    className="border rounded-2xl p-5 bg-cyan-50"
-                  >
+                  <div key={item._id} className="border rounded-2xl p-5 bg-cyan-50">
                     <h3 className="font-bold text-lg">{item.patientName}</h3>
                     <p>Email: {item.patientEmail}</p>
                     <p>Date: {item.appointmentDate}</p>
                     <p>Time: {item.appointmentTime}</p>
                     <p>Symptoms: {item.symptoms}</p>
                     <p>Status: {item.appointmentStatus}</p>
+                    <p>Payment: {item.paymentStatus}</p>
 
                     <div className="flex flex-wrap gap-3 mt-4">
-                      <button
-                        onClick={() => updateAppointment(item._id, "approved")}
-                        className="px-4 py-2 bg-green-500 text-white rounded-xl"
-                      >
+                      <button onClick={() => updateAppointment(item._id, "approved")} className="px-4 py-2 bg-green-500 text-white rounded-xl">
                         Accept
                       </button>
 
-                      <button
-                        onClick={() => updateAppointment(item._id, "cancelled")}
-                        className="px-4 py-2 bg-red-500 text-white rounded-xl"
-                      >
+                      <button onClick={() => updateAppointment(item._id, "cancelled")} className="px-4 py-2 bg-red-500 text-white rounded-xl">
                         Reject
                       </button>
 
-                      <button
-                        onClick={() => updateAppointment(item._id, "completed")}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-xl"
-                      >
+                      <button onClick={() => updateAppointment(item._id, "completed")} className="px-4 py-2 bg-blue-500 text-white rounded-xl">
                         Complete
                       </button>
 
-                      <button
-                        onClick={() => createPrescription(item)}
-                        className="px-4 py-2 bg-purple-500 text-white rounded-xl"
-                      >
+                      <button onClick={() => createPrescription(item)} className="px-4 py-2 bg-purple-500 text-white rounded-xl">
                         Create Prescription
                       </button>
                     </div>
                   </div>
                 ))
               )}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6 mt-8">
-            <h2 className="text-2xl font-bold">Profile Management</h2>
-            <div className="mt-4 text-slate-600 space-y-2">
-              <p>Qualifications: {dbUser?.qualifications || "Not added"}</p>
-              <p>Experience: {dbUser?.experience || "Not added"}</p>
-              <p>Consultation Fee: {dbUser?.consultationFee || "Not added"}</p>
-              <p>Available Slots: {dbUser?.availableSlots || "Not added"}</p>
             </div>
           </div>
         </div>
@@ -280,10 +238,7 @@ const Dashboard = () => {
                 <p>No pending doctor request.</p>
               ) : (
                 pendingDoctors.map((doctor) => (
-                  <div
-                    key={doctor._id}
-                    className="border rounded-2xl p-5 bg-orange-50 flex flex-col md:flex-row md:justify-between gap-4"
-                  >
+                  <div key={doctor._id} className="border rounded-2xl p-5 bg-orange-50 flex flex-col md:flex-row md:justify-between gap-4">
                     <div>
                       <h3 className="font-bold">{doctor.name}</h3>
                       <p>{doctor.email}</p>
@@ -294,21 +249,11 @@ const Dashboard = () => {
                     </div>
 
                     <div className="flex gap-3">
-                      <button
-                        onClick={() =>
-                          updateDoctorVerification(doctor._id, "verified")
-                        }
-                        className="px-4 py-2 bg-green-500 text-white rounded-xl"
-                      >
+                      <button onClick={() => updateDoctorVerification(doctor._id, "verified")} className="px-4 py-2 bg-green-500 text-white rounded-xl">
                         Verify
                       </button>
 
-                      <button
-                        onClick={() =>
-                          updateDoctorVerification(doctor._id, "rejected")
-                        }
-                        className="px-4 py-2 bg-red-500 text-white rounded-xl"
-                      >
+                      <button onClick={() => updateDoctorVerification(doctor._id, "rejected")} className="px-4 py-2 bg-red-500 text-white rounded-xl">
                         Reject
                       </button>
                     </div>
@@ -323,39 +268,14 @@ const Dashboard = () => {
 
             <div className="mt-6 space-y-4">
               {appointments.map((item) => (
-                <div
-                  key={item._id}
-                  className="border rounded-2xl p-5 bg-cyan-50"
-                >
+                <div key={item._id} className="border rounded-2xl p-5 bg-cyan-50">
                   <h3 className="font-bold text-lg">{item.doctorName}</h3>
                   <p>Patient: {item.patientName}</p>
                   <p>Email: {item.patientEmail}</p>
                   <p>Date: {item.appointmentDate}</p>
                   <p>Time: {item.appointmentTime}</p>
                   <p>Status: {item.appointmentStatus}</p>
-
-                  <div className="flex flex-wrap gap-3 mt-4">
-                    <button
-                      onClick={() => updateAppointment(item._id, "approved")}
-                      className="px-4 py-2 bg-green-500 text-white rounded-xl"
-                    >
-                      Approve
-                    </button>
-
-                    <button
-                      onClick={() => updateAppointment(item._id, "completed")}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-xl"
-                    >
-                      Complete
-                    </button>
-
-                    <button
-                      onClick={() => updateAppointment(item._id, "cancelled")}
-                      className="px-4 py-2 bg-red-500 text-white rounded-xl"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+                  <p>Payment: {item.paymentStatus}</p>
                 </div>
               ))}
             </div>
@@ -366,10 +286,7 @@ const Dashboard = () => {
 
             <div className="mt-6 space-y-4">
               {allUsers.map((item) => (
-                <div
-                  key={item._id}
-                  className="border rounded-2xl p-5 flex flex-col md:flex-row md:justify-between gap-4"
-                >
+                <div key={item._id} className="border rounded-2xl p-5 flex flex-col md:flex-row md:justify-between gap-4">
                   <div>
                     <h3 className="font-bold">{item.name || "N/A"}</h3>
                     <p>{item.email}</p>
@@ -379,17 +296,11 @@ const Dashboard = () => {
                   </div>
 
                   <div className="flex gap-3">
-                    <button
-                      onClick={() => updateUserStatus(item._id, "active")}
-                      className="px-4 py-2 bg-green-500 text-white rounded-xl"
-                    >
+                    <button onClick={() => updateUserStatus(item._id, "active")} className="px-4 py-2 bg-green-500 text-white rounded-xl">
                       Active
                     </button>
 
-                    <button
-                      onClick={() => updateUserStatus(item._id, "suspended")}
-                      className="px-4 py-2 bg-red-500 text-white rounded-xl"
-                    >
+                    <button onClick={() => updateUserStatus(item._id, "suspended")} className="px-4 py-2 bg-red-500 text-white rounded-xl">
                       Suspend
                     </button>
                   </div>
@@ -400,7 +311,24 @@ const Dashboard = () => {
 
           <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6 mt-8">
             <h2 className="text-2xl font-bold">Payment Management</h2>
-            <p className="mt-4">Admin can view payment records here.</p>
+
+            <div className="mt-6 space-y-4">
+              {payments.length === 0 ? (
+                <p>No payment records found.</p>
+              ) : (
+                payments.map((payment) => (
+                  <div key={payment._id} className="border rounded-2xl p-5 bg-green-50">
+                    <h3 className="font-bold text-lg">
+                      Doctor: {payment.doctorName}
+                    </h3>
+                    <p>Patient Email: {payment.patientEmail}</p>
+                    <p>Amount: ৳{payment.amount}</p>
+                    <p>Status: {payment.paymentStatus}</p>
+                    <p>Transaction ID: {payment.transactionId}</p>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -417,25 +345,10 @@ const Dashboard = () => {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-          <Card
-            title="Upcoming Appointments"
-            value={
-              appointments.filter((a) => a.appointmentStatus !== "cancelled")
-                .length
-            }
-          />
+          <Card title="Upcoming Appointments" value={appointments.filter((a) => a.appointmentStatus !== "cancelled").length} />
           <Card title="Appointment History" value={appointments.length} />
-          <Card
-            title="Paid Appointments"
-            value={appointments.filter((a) => a.paymentStatus === "paid").length}
-          />
-          <Card
-            title="Cancelled"
-            value={
-              appointments.filter((a) => a.appointmentStatus === "cancelled")
-                .length
-            }
-          />
+          <Card title="Paid Appointments" value={appointments.filter((a) => a.paymentStatus === "paid").length} />
+          <Card title="Cancelled" value={appointments.filter((a) => a.appointmentStatus === "cancelled").length} />
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 mt-8">
@@ -447,10 +360,7 @@ const Dashboard = () => {
                 <p>No appointment booked yet.</p>
               ) : (
                 appointments.map((item) => (
-                  <div
-                    key={item._id}
-                    className="border rounded-2xl p-5 bg-cyan-50"
-                  >
+                  <div key={item._id} className="border rounded-2xl p-5 bg-cyan-50">
                     <h3 className="text-xl font-bold">{item.doctorName}</h3>
                     <p className="text-cyan-700">{item.specialization}</p>
                     <p>Date: {item.appointmentDate}</p>
@@ -460,23 +370,16 @@ const Dashboard = () => {
                     <p>Status: {item.appointmentStatus}</p>
                     <p>Payment: {item.paymentStatus}</p>
 
+                    {item.paymentStatus !== "paid" &&
+                      item.appointmentStatus !== "cancelled" && (
+                        <CheckoutForm appointment={item} onSuccess={loadData} />
+                      )}
+
                     {item.appointmentStatus !== "cancelled" && (
-                      <button
-                        onClick={() => cancelAppointment(item._id)}
-                        className="mt-4 px-4 py-2 bg-red-500 text-white rounded-xl"
-                      >
+                      <button onClick={() => cancelAppointment(item._id)} className="mt-4 px-4 py-2 bg-red-500 text-white rounded-xl">
                         Cancel Appointment
                       </button>
-
                     )}
-                    {item.paymentStatus !== "paid" && (
-  <button
-    onClick={() => makePayment(item)}
-    className="mt-4 ml-3 px-4 py-2 bg-green-500 text-white rounded-xl"
-  >
-    Pay Now
-  </button>
-)}
                   </div>
                 ))
               )}
@@ -490,10 +393,7 @@ const Dashboard = () => {
                   <p>No prescription found.</p>
                 ) : (
                   prescriptions.map((item) => (
-                    <div
-                      key={item._id}
-                      className="border rounded-2xl p-5 bg-purple-50"
-                    >
+                    <div key={item._id} className="border rounded-2xl p-5 bg-purple-50">
                       <h3 className="font-bold text-lg">
                         Doctor: {item.doctorName}
                       </h3>
@@ -522,7 +422,7 @@ const Dashboard = () => {
                 Paid Appointments:{" "}
                 {appointments.filter((a) => a.paymentStatus === "paid").length}
               </p>
-              <p>Payment Gateway: Stripe pending</p>
+              <p>Payment Gateway: Stripe</p>
             </div>
           </div>
         </div>
