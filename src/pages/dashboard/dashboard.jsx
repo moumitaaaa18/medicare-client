@@ -1,6 +1,11 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../providers/AuthProvider";
 import CheckoutForm from "../Register/CheckoutForm";
+import { useEffect } from "react";
+
+useEffect(() => {
+  document.title = "Dashboard | MediCare Connect";
+}, []);
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);

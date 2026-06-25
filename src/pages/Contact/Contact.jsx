@@ -1,3 +1,8 @@
+ import { useEffect } from "react";
+
+useEffect(() => {
+  document.title = "Contact | MediCare Connect";
+}, []);
 const Contact = () => {
   return (
     <section className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-blue-50 py-16">

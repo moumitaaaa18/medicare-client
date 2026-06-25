@@ -1,6 +1,11 @@
 import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../providers/AuthProvider";
+import { useEffect } from "react";
+
+useEffect(() => {
+  document.title = "Register | MediCare Connect";
+}, []);
 
 const Register = () => {
   const { createUser } = useContext(AuthContext);

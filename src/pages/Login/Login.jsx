@@ -1,6 +1,11 @@
 import { useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../providers/AuthProvider";
+import { useEffect } from "react";
+
+useEffect(() => {
+  document.title = "Login | MediCare Connect";
+}, []);
 
 const Login = () => {
   const { loginUser, googleLogin, refreshUser } = useContext(AuthContext);
