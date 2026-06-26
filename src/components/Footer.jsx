@@ -6,7 +6,9 @@ const Footer = () => {
     <footer className="mt-20 bg-slate-950 text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 md:grid-cols-4">
         <div>
-          <h2 className="text-2xl font-bold text-teal-400">MediCareConnect</h2>
+          <h2 className="text-2xl font-bold text-cyan-700">
+  MediCare<span className="text-white">Connect</span>
+</h2>
           <p className="mt-3 text-sm text-slate-300">
             Smart hospital appointment and healthcare management system.
           </p>
