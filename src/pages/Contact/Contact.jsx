@@ -1,9 +1,10 @@
  import { useEffect } from "react";
 
-useEffect(() => {
+
+const Contact = () => {
+  useEffect(() => {
   document.title = "Contact | MediCare Connect";
 }, []);
-const Contact = () => {
   return (
     <section className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-blue-50 py-16">
       <div className="max-w-6xl mx-auto px-6">

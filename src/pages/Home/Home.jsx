@@ -1,11 +1,12 @@
 import FeaturedDoctors from "../../components/FeaturedDoctors";
 import { useEffect } from "react";
 
-useEffect(() => {
-  document.title = "Home | MediCare Connect";
-}, []);
+
 
 const Home = () => {
+  useEffect(() => {
+  document.title = "Home | MediCare Connect";
+}, []);
   return (
     <div>
       <section className="bg-gradient-to-r from-cyan-500 to-blue-700 text-white">

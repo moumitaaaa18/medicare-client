@@ -3,11 +3,12 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../providers/AuthProvider";
 import { useEffect } from "react";
 
-useEffect(() => {
-  document.title = "Login | MediCare Connect";
-}, []);
+
 
 const Login = () => {
+  useEffect(() => {
+  document.title = "Login | MediCare Connect";
+}, []);
   const { loginUser, googleLogin, refreshUser } = useContext(AuthContext);
   const [error, setError] = useState("");
 

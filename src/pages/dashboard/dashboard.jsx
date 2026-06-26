@@ -1,14 +1,15 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../providers/AuthProvider";
 import CheckoutForm from "../Register/CheckoutForm";
-import { useEffect } from "react";
-
-useEffect(() => {
-  document.title = "Dashboard | MediCare Connect";
-}, []);
+import AdminAnalytics from "../../components/AdminAnalytics";
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
+
+  useEffect(() => {
+    document.title = "Dashboard | MediCare Connect";
+  }, []);
+
   const [dbUser, setDbUser] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
@@ -46,10 +47,14 @@ const Dashboard = () => {
         const appRes = await fetch("http://localhost:5000/appointments");
         const appData = await appRes.json();
 
-        const doctorAppointments = appData.filter(
-          (item) =>
-            item.doctorEmail === user.email || item.doctorName === userData?.name
-        );
+        const doctorAppointments = Array.isArray(appData)
+          ? appData.filter(
+              (item) =>
+                item.doctorEmail === user.email ||
+                item.doctorName === userData?.name ||
+                item.doctorName === `Dr. ${userData?.name}`
+            )
+          : [];
 
         setAppointments(doctorAppointments);
       } else {
@@ -80,11 +85,41 @@ const Dashboard = () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ appointmentStatus: status }),
     });
+
     loadData();
   };
 
   const cancelAppointment = async (id) => {
     await updateAppointment(id, "cancelled");
+  };
+
+  const rescheduleAppointment = async (item) => {
+    const newDate = prompt(
+      "Enter new appointment date (YYYY-MM-DD)",
+      item.appointmentDate || ""
+    );
+
+    if (!newDate) return;
+
+    const newTime = prompt(
+      "Enter new appointment time, example: 03:00 PM",
+      item.appointmentTime || ""
+    );
+
+    if (!newTime) return;
+
+    await fetch(`http://localhost:5000/appointments/${item._id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        appointmentDate: newDate,
+        appointmentTime: newTime,
+        appointmentStatus: "pending",
+      }),
+    });
+
+    alert("Appointment Rescheduled Successfully");
+    loadData();
   };
 
   const updateUserStatus = async (id, status) => {
@@ -93,6 +128,7 @@ const Dashboard = () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ status }),
     });
+
     loadData();
   };
 
@@ -102,8 +138,12 @@ const Dashboard = () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ verificationStatus }),
     });
+
     loadData();
   };
+
+  const role = dbUser?.role?.toLowerCase() || "patient";
+  const displayName = dbUser?.name || user?.email || "User";
 
   const createPrescription = async (item) => {
     const medicine = prompt("Medicine Name");
@@ -139,9 +179,6 @@ const Dashboard = () => {
     );
   }
 
-  const role = dbUser?.role?.toLowerCase() || "patient";
-  const displayName = dbUser?.name || user?.email || "User";
-
   if (role === "doctor") {
     return (
       <section className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-blue-50 px-4 py-10">
@@ -161,13 +198,19 @@ const Dashboard = () => {
           <div className="grid sm:grid-cols-3 gap-6 mt-8">
             <Card title="Total Patients" value={appointments.length} />
             <Card
-              title="Today's Appointments"
+              title="Approved Appointments"
               value={
                 appointments.filter((a) => a.appointmentStatus === "approved")
                   .length
               }
             />
-            <Card title="Reviews Received" value={0} />
+            <Card
+              title="Completed"
+              value={
+                appointments.filter((a) => a.appointmentStatus === "completed")
+                  .length
+              }
+            />
           </div>
 
           <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6 mt-8">
@@ -178,7 +221,10 @@ const Dashboard = () => {
                 <p>No appointment requests found.</p>
               ) : (
                 appointments.map((item) => (
-                  <div key={item._id} className="border rounded-2xl p-5 bg-cyan-50">
+                  <div
+                    key={item._id}
+                    className="border rounded-2xl p-5 bg-cyan-50"
+                  >
                     <h3 className="font-bold text-lg">{item.patientName}</h3>
                     <p>Email: {item.patientEmail}</p>
                     <p>Date: {item.appointmentDate}</p>
@@ -188,21 +234,59 @@ const Dashboard = () => {
                     <p>Payment: {item.paymentStatus}</p>
 
                     <div className="flex flex-wrap gap-3 mt-4">
-                      <button onClick={() => updateAppointment(item._id, "approved")} className="px-4 py-2 bg-green-500 text-white rounded-xl">
-                        Accept
-                      </button>
+                      {item.appointmentStatus === "pending" && (
+                        <>
+                          <button
+                            onClick={() =>
+                              updateAppointment(item._id, "approved")
+                            }
+                            className="px-4 py-2 bg-green-500 text-white rounded-xl"
+                          >
+                            Accept
+                          </button>
 
-                      <button onClick={() => updateAppointment(item._id, "cancelled")} className="px-4 py-2 bg-red-500 text-white rounded-xl">
-                        Reject
-                      </button>
+                          <button
+                            onClick={() =>
+                              updateAppointment(item._id, "cancelled")
+                            }
+                            className="px-4 py-2 bg-red-500 text-white rounded-xl"
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
 
-                      <button onClick={() => updateAppointment(item._id, "completed")} className="px-4 py-2 bg-blue-500 text-white rounded-xl">
-                        Complete
-                      </button>
+                      {item.appointmentStatus === "approved" && (
+                        <>
+                          <button
+                            onClick={() =>
+                              updateAppointment(item._id, "completed")
+                            }
+                            className="px-4 py-2 bg-blue-500 text-white rounded-xl"
+                          >
+                            Complete
+                          </button>
 
-                      <button onClick={() => createPrescription(item)} className="px-4 py-2 bg-purple-500 text-white rounded-xl">
-                        Create Prescription
-                      </button>
+                          <button
+                            onClick={() => createPrescription(item)}
+                            className="px-4 py-2 bg-purple-500 text-white rounded-xl"
+                          >
+                            Create Prescription
+                          </button>
+                        </>
+                      )}
+
+                      {item.appointmentStatus === "completed" && (
+                        <span className="px-4 py-2 bg-green-100 text-green-700 rounded-xl">
+                          Appointment Completed
+                        </span>
+                      )}
+
+                      {item.appointmentStatus === "cancelled" && (
+                        <span className="px-4 py-2 bg-red-100 text-red-700 rounded-xl">
+                          Appointment Cancelled
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))
@@ -232,8 +316,17 @@ const Dashboard = () => {
             <Card title="Total Users" value={stats.totalUsers || 0} />
             <Card title="Total Doctors" value={stats.totalDoctors || 0} />
             <Card title="Total Patients" value={stats.totalPatients || 0} />
-            <Card title="Total Appointments" value={stats.totalAppointments || 0} />
+            <Card
+              title="Total Appointments"
+              value={stats.totalAppointments || 0}
+            />
           </div>
+
+          <AdminAnalytics
+            stats={stats}
+            appointments={appointments}
+            allUsers={allUsers}
+          />
 
           <div className="bg-white rounded-3xl shadow-md border border-cyan-100 p-6 mt-8">
             <h2 className="text-2xl font-bold">Pending Doctor Verification</h2>
@@ -243,7 +336,10 @@ const Dashboard = () => {
                 <p>No pending doctor request.</p>
               ) : (
                 pendingDoctors.map((doctor) => (
-                  <div key={doctor._id} className="border rounded-2xl p-5 bg-orange-50 flex flex-col md:flex-row md:justify-between gap-4">
+                  <div
+                    key={doctor._id}
+                    className="border rounded-2xl p-5 bg-orange-50 flex flex-col md:flex-row md:justify-between gap-4"
+                  >
                     <div>
                       <h3 className="font-bold">{doctor.name}</h3>
                       <p>{doctor.email}</p>
@@ -254,11 +350,21 @@ const Dashboard = () => {
                     </div>
 
                     <div className="flex gap-3">
-                      <button onClick={() => updateDoctorVerification(doctor._id, "verified")} className="px-4 py-2 bg-green-500 text-white rounded-xl">
+                      <button
+                        onClick={() =>
+                          updateDoctorVerification(doctor._id, "verified")
+                        }
+                        className="px-4 py-2 bg-green-500 text-white rounded-xl"
+                      >
                         Verify
                       </button>
 
-                      <button onClick={() => updateDoctorVerification(doctor._id, "rejected")} className="px-4 py-2 bg-red-500 text-white rounded-xl">
+                      <button
+                        onClick={() =>
+                          updateDoctorVerification(doctor._id, "rejected")
+                        }
+                        className="px-4 py-2 bg-red-500 text-white rounded-xl"
+                      >
                         Reject
                       </button>
                     </div>
@@ -272,17 +378,24 @@ const Dashboard = () => {
             <h2 className="text-2xl font-bold">Manage Appointments</h2>
 
             <div className="mt-6 space-y-4">
-              {appointments.map((item) => (
-                <div key={item._id} className="border rounded-2xl p-5 bg-cyan-50">
-                  <h3 className="font-bold text-lg">{item.doctorName}</h3>
-                  <p>Patient: {item.patientName}</p>
-                  <p>Email: {item.patientEmail}</p>
-                  <p>Date: {item.appointmentDate}</p>
-                  <p>Time: {item.appointmentTime}</p>
-                  <p>Status: {item.appointmentStatus}</p>
-                  <p>Payment: {item.paymentStatus}</p>
-                </div>
-              ))}
+              {appointments.length === 0 ? (
+                <p>No appointments found.</p>
+              ) : (
+                appointments.map((item) => (
+                  <div
+                    key={item._id}
+                    className="border rounded-2xl p-5 bg-cyan-50"
+                  >
+                    <h3 className="font-bold text-lg">{item.doctorName}</h3>
+                    <p>Patient: {item.patientName}</p>
+                    <p>Email: {item.patientEmail}</p>
+                    <p>Date: {item.appointmentDate}</p>
+                    <p>Time: {item.appointmentTime}</p>
+                    <p>Status: {item.appointmentStatus}</p>
+                    <p>Payment: {item.paymentStatus}</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -290,27 +403,40 @@ const Dashboard = () => {
             <h2 className="text-2xl font-bold">Manage Users</h2>
 
             <div className="mt-6 space-y-4">
-              {allUsers.map((item) => (
-                <div key={item._id} className="border rounded-2xl p-5 flex flex-col md:flex-row md:justify-between gap-4">
-                  <div>
-                    <h3 className="font-bold">{item.name || "N/A"}</h3>
-                    <p>{item.email}</p>
-                    <p>Role: {item.role}</p>
-                    <p>Status: {item.status}</p>
-                    <p>Verification: {item.verificationStatus || "verified"}</p>
-                  </div>
+              {allUsers.length === 0 ? (
+                <p>No users found.</p>
+              ) : (
+                allUsers.map((item) => (
+                  <div
+                    key={item._id}
+                    className="border rounded-2xl p-5 flex flex-col md:flex-row md:justify-between gap-4"
+                  >
+                    <div>
+                      <h3 className="font-bold">{item.name || "N/A"}</h3>
+                      <p>{item.email}</p>
+                      <p>Role: {item.role}</p>
+                      <p>Status: {item.status}</p>
+                      <p>Verification: {item.verificationStatus || "verified"}</p>
+                    </div>
 
-                  <div className="flex gap-3">
-                    <button onClick={() => updateUserStatus(item._id, "active")} className="px-4 py-2 bg-green-500 text-white rounded-xl">
-                      Active
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => updateUserStatus(item._id, "active")}
+                        className="px-4 py-2 bg-green-500 text-white rounded-xl"
+                      >
+                        Active
+                      </button>
 
-                    <button onClick={() => updateUserStatus(item._id, "suspended")} className="px-4 py-2 bg-red-500 text-white rounded-xl">
-                      Suspend
-                    </button>
+                      <button
+                        onClick={() => updateUserStatus(item._id, "suspended")}
+                        className="px-4 py-2 bg-red-500 text-white rounded-xl"
+                      >
+                        Suspend
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -322,7 +448,10 @@ const Dashboard = () => {
                 <p>No payment records found.</p>
               ) : (
                 payments.map((payment) => (
-                  <div key={payment._id} className="border rounded-2xl p-5 bg-green-50">
+                  <div
+                    key={payment._id}
+                    className="border rounded-2xl p-5 bg-green-50"
+                  >
                     <h3 className="font-bold text-lg">
                       Doctor: {payment.doctorName}
                     </h3>
@@ -350,10 +479,25 @@ const Dashboard = () => {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-          <Card title="Upcoming Appointments" value={appointments.filter((a) => a.appointmentStatus !== "cancelled").length} />
+          <Card
+            title="Upcoming Appointments"
+            value={
+              appointments.filter((a) => a.appointmentStatus !== "cancelled")
+                .length
+            }
+          />
           <Card title="Appointment History" value={appointments.length} />
-          <Card title="Paid Appointments" value={appointments.filter((a) => a.paymentStatus === "paid").length} />
-          <Card title="Cancelled" value={appointments.filter((a) => a.appointmentStatus === "cancelled").length} />
+          <Card
+            title="Paid Appointments"
+            value={appointments.filter((a) => a.paymentStatus === "paid").length}
+          />
+          <Card
+            title="Cancelled"
+            value={
+              appointments.filter((a) => a.appointmentStatus === "cancelled")
+                .length
+            }
+          />
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 mt-8">
@@ -365,7 +509,10 @@ const Dashboard = () => {
                 <p>No appointment booked yet.</p>
               ) : (
                 appointments.map((item) => (
-                  <div key={item._id} className="border rounded-2xl p-5 bg-cyan-50">
+                  <div
+                    key={item._id}
+                    className="border rounded-2xl p-5 bg-cyan-50"
+                  >
                     <h3 className="text-xl font-bold">{item.doctorName}</h3>
                     <p className="text-cyan-700">{item.specialization}</p>
                     <p>Date: {item.appointmentDate}</p>
@@ -376,14 +523,65 @@ const Dashboard = () => {
                     <p>Payment: {item.paymentStatus}</p>
 
                     {item.paymentStatus !== "paid" &&
-                      item.appointmentStatus !== "cancelled" && (
+                      item.appointmentStatus !== "cancelled" &&
+                      item.appointmentStatus !== "completed" && (
                         <CheckoutForm appointment={item} onSuccess={loadData} />
                       )}
 
-                    {item.appointmentStatus !== "cancelled" && (
-                      <button onClick={() => cancelAppointment(item._id)} className="mt-4 px-4 py-2 bg-red-500 text-white rounded-xl">
-                        Cancel Appointment
-                      </button>
+                    {item.appointmentStatus === "pending" && (
+                      <>
+                        <button
+                          onClick={() => cancelAppointment(item._id)}
+                          className="mt-4 px-4 py-2 bg-red-500 text-white rounded-xl"
+                        >
+                          Cancel Appointment
+                        </button>
+
+                        <button
+                          onClick={() => rescheduleAppointment(item)}
+                          className="mt-4 ml-3 px-4 py-2 bg-yellow-500 text-white rounded-xl"
+                        >
+                          Reschedule
+                        </button>
+                      </>
+                    )}
+
+                    {item.appointmentStatus === "approved" &&
+                      item.paymentStatus !== "paid" && (
+                        <>
+                          <button
+                            onClick={() => cancelAppointment(item._id)}
+                            className="mt-4 px-4 py-2 bg-red-500 text-white rounded-xl"
+                          >
+                            Cancel Appointment
+                          </button>
+
+                          <button
+                            onClick={() => rescheduleAppointment(item)}
+                            className="mt-4 ml-3 px-4 py-2 bg-yellow-500 text-white rounded-xl"
+                          >
+                            Reschedule
+                          </button>
+                        </>
+                      )}
+
+                    {item.appointmentStatus === "approved" &&
+                      item.paymentStatus === "paid" && (
+                        <p className="mt-4 inline-block px-4 py-2 bg-blue-100 text-blue-700 rounded-xl">
+                          Appointment Approved and Paid
+                        </p>
+                      )}
+
+                    {item.appointmentStatus === "completed" && (
+                      <p className="mt-4 inline-block px-4 py-2 bg-green-100 text-green-700 rounded-xl">
+                        Appointment Completed
+                      </p>
+                    )}
+
+                    {item.appointmentStatus === "cancelled" && (
+                      <p className="mt-4 inline-block px-4 py-2 bg-red-100 text-red-700 rounded-xl">
+                        Appointment Cancelled
+                      </p>
                     )}
                   </div>
                 ))
@@ -398,7 +596,10 @@ const Dashboard = () => {
                   <p>No prescription found.</p>
                 ) : (
                   prescriptions.map((item) => (
-                    <div key={item._id} className="border rounded-2xl p-5 bg-purple-50">
+                    <div
+                      key={item._id}
+                      className="border rounded-2xl p-5 bg-purple-50"
+                    >
                       <h3 className="font-bold text-lg">
                         Doctor: {item.doctorName}
                       </h3>

@@ -3,11 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../providers/AuthProvider";
 import { useEffect } from "react";
 
-useEffect(() => {
-  document.title = "Register | MediCare Connect";
-}, []);
+
 
 const Register = () => {
+  useEffect(() => {
+  document.title = "Login | MediCare Connect";
+}, []);
   const { createUser } = useContext(AuthContext);
   const [error, setError] = useState("");
   const [role, setRole] = useState("patient");

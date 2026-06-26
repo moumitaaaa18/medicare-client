@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 const FeaturedDoctors = () => {
   const doctors = [
     { name: "Dr. Sam Rene", specialization: "Cardiologist", experience: "10 Years", fee: "৳2000", image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&auto=format&fit=crop" },

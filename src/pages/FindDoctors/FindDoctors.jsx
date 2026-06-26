@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useEffect } from "react";
 
-useEffect(() => {
-  document.title = "Find Doctors | MediCare Connect";
-}, []);
+
+
 
 const FindDoctors = () => {
+  useEffect(() => {
+  document.title = "Find Doctors | MediCare Connect";
+}, []);
   const [doctors, setDoctors] = useState([]);
   const [search, setSearch] = useState("");
   const [sortType, setSortType] = useState("");
