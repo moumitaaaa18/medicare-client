@@ -1,24 +1,27 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../providers/AuthProvider";
-import { useEffect } from "react";
-
-
 
 const Login = () => {
-  useEffect(() => {
-  document.title = "Login | MediCare Connect";
-}, []);
-  const { loginUser, googleLogin, refreshUser } = useContext(AuthContext);
+  const { loginUser, googleLogin } = useContext(AuthContext);
+
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/dashboard";
 
+  useEffect(() => {
+    document.title = "Login | MediCare Connect";
+  }, []);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
+    setLoading(true);
 
     const form = e.target;
     const email = form.email.value;
@@ -28,21 +31,28 @@ const Login = () => {
 
     if (result?.error) {
       setError(result.error.message);
+      setLoading(false);
       return;
     }
 
-    
+    setSuccess("Login successful");
     form.reset();
-    navigate(from, { replace: true });
+
+    setTimeout(() => {
+      navigate(from, { replace: true });
+    }, 700);
   };
 
   const handleGoogleLogin = async () => {
     setError("");
+    setSuccess("");
+    setLoading(true);
 
     const result = await googleLogin();
 
     if (result?.error) {
       setError(result.error.message);
+      setLoading(false);
     }
   };
 
@@ -75,9 +85,13 @@ const Login = () => {
           />
 
           {error && <p className="text-red-500 text-sm">{error}</p>}
+          {success && <p className="text-green-600 text-sm">{success}</p>}
 
-          <button className="w-full bg-gradient-to-r from-cyan-500 to-blue-700 text-white py-3 rounded-xl font-semibold">
-            Login
+          <button
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-cyan-500 to-blue-700 text-white py-3 rounded-xl font-semibold disabled:opacity-60"
+          >
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
@@ -85,9 +99,10 @@ const Login = () => {
 
         <button
           onClick={handleGoogleLogin}
-          className="w-full border border-cyan-200 py-3 rounded-xl font-semibold text-slate-700 hover:bg-cyan-50 transition"
+          disabled={loading}
+          className="w-full border border-cyan-200 py-3 rounded-xl font-semibold text-slate-700 hover:bg-cyan-50 transition disabled:opacity-60"
         >
-          Continue with Google
+          {loading ? "Redirecting..." : "Continue with Google"}
         </button>
 
         <p className="text-center text-slate-600 mt-6">

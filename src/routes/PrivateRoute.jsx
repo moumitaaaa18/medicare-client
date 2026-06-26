@@ -1,5 +1,5 @@
-import { useContext } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { useContext } from "react";
 import { AuthContext } from "../providers/AuthProvider";
 
 const PrivateRoute = ({ children }) => {
@@ -8,14 +8,20 @@ const PrivateRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-cyan-50">
-        <p className="text-xl font-semibold text-cyan-700">Loading...</p>
+      <div className="min-h-screen flex justify-center items-center">
+        <span className="loading loading-spinner loading-lg"></span>
       </div>
     );
   }
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return (
+      <Navigate
+        to="/login"
+        state={{ from: location }}
+        replace
+      />
+    );
   }
 
   return children;

@@ -13,6 +13,9 @@ const Dashboard = () => {
   const [dbUser, setDbUser] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
+  const [reviewText, setReviewText] = useState("");
+const [rating, setRating] = useState(5);
+const [reviews, setReviews] = useState([]);
   const [payments, setPayments] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [stats, setStats] = useState({});
@@ -32,16 +35,32 @@ const Dashboard = () => {
       const role = userData?.role?.toLowerCase() || "patient";
 
       if (role === "admin") {
-        const usersRes = await fetch("http://localhost:5000/users");
+        const usersRes = await fetch("http://localhost:5000/users", {
+  headers: {
+    authorization: `Bearer ${localStorage.getItem("access-token")}`,
+  },
+});
         setAllUsers(await usersRes.json());
 
-        const appRes = await fetch("http://localhost:5000/appointments");
+        const appRes = await fetch("http://localhost:5000/appointments", {
+  headers: {
+    authorization: `Bearer ${localStorage.getItem("access-token")}`,
+  },
+});
         setAppointments(await appRes.json());
 
-        const payRes = await fetch("http://localhost:5000/payments");
+        const payRes = await fetch("http://localhost:5000/payments", {
+  headers: {
+    authorization: `Bearer ${localStorage.getItem("access-token")}`,
+  },
+});
         setPayments(await payRes.json());
 
-        const statsRes = await fetch("http://localhost:5000/dashboard-stats");
+        const statsRes = await fetch("http://localhost:5000/dashboard-stats", {
+  headers: {
+    authorization: `Bearer ${localStorage.getItem("access-token")}`,
+  },
+});
         setStats(await statsRes.json());
       } else if (role === "doctor") {
         const appRes = await fetch("http://localhost:5000/appointments");
@@ -68,6 +87,10 @@ const Dashboard = () => {
         );
         setPrescriptions(await preRes.json());
       }
+      const reviewRes = await fetch(
+  `http://localhost:5000/reviews/${encodeURIComponent(user.email)}`
+);
+setReviews(await reviewRes.json());
     } catch (error) {
       console.log("Dashboard load error:", error);
     } finally {
@@ -92,6 +115,38 @@ const Dashboard = () => {
   const cancelAppointment = async (id) => {
     await updateAppointment(id, "cancelled");
   };
+  const submitReview = async (appointment) => {
+  if (!reviewText.trim()) {
+    alert("Please write your feedback.");
+    return;
+  }
+
+  const review = {
+    patientName: displayName,
+    patientEmail: user.email,
+    doctorName: appointment.doctorName,
+    doctorEmail: appointment.doctorEmail,
+    rating,
+    review: reviewText,
+  };
+
+  const res = await fetch("http://localhost:5000/reviews", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(review),
+  });
+
+  const data = await res.json();
+
+  if (data.insertedId || data.success) {
+    alert("Review submitted successfully!");
+    setReviewText("");
+    setRating(5);
+    loadData();
+  }
+};
 
   const rescheduleAppointment = async (item) => {
     const newDate = prompt(
@@ -277,10 +332,41 @@ const Dashboard = () => {
                       )}
 
                       {item.appointmentStatus === "completed" && (
-                        <span className="px-4 py-2 bg-green-100 text-green-700 rounded-xl">
-                          Appointment Completed
-                        </span>
-                      )}
+  <>
+    <span className="px-4 py-2 bg-green-100 text-green-700 rounded-xl">
+      Appointment Completed
+    </span>
+
+    <div className="mt-4 space-y-3">
+      <textarea
+        value={reviewText}
+        onChange={(e) => setReviewText(e.target.value)}
+        placeholder="Write your feedback..."
+        className="textarea textarea-bordered w-full"
+      />
+
+      <select
+        value={rating}
+        onChange={(e) => setRating(Number(e.target.value))}
+        className="select select-bordered w-full"
+      >
+        <option value={5}>⭐⭐⭐⭐⭐</option>
+        <option value={4}>⭐⭐⭐⭐</option>
+        <option value={3}>⭐⭐⭐</option>
+        <option value={2}>⭐⭐</option>
+        <option value={1}>⭐</option>
+      </select>
+
+      <button
+        onClick={() => submitReview(item)}
+        className="btn btn-primary"
+      >
+        Submit Feedback
+      </button>
+    </div>
+  </>
+)}
+
 
                       {item.appointmentStatus === "cancelled" && (
                         <span className="px-4 py-2 bg-red-100 text-red-700 rounded-xl">
