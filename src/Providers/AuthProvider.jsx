@@ -23,23 +23,6 @@ const AuthProvider = ({ children }) => {
     }
   };
 
-  const saveUserToDatabase = async (currentUser) => {
-    if (!currentUser?.email) return;
-
-    await fetch("http://localhost:5000/users", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        name: currentUser.name || currentUser.email,
-        email: currentUser.email,
-        photo: currentUser.image || "https://i.ibb.co/4pDNDk1/avatar.png",
-        role: "patient",
-        status: "active",
-        verificationStatus: "verified",
-      }),
-    });
-  };
-
   const checkSession = async () => {
     try {
       const session = await authClient.getSession();
@@ -48,7 +31,6 @@ const AuthProvider = ({ children }) => {
       setUser(currentUser);
 
       if (currentUser?.email) {
-        await saveUserToDatabase(currentUser);
         await saveJwtToken(currentUser.email);
       }
     } catch (error) {

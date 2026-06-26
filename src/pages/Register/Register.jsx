@@ -1,14 +1,12 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../providers/AuthProvider";
-import { useEffect } from "react";
-
-
 
 const Register = () => {
   useEffect(() => {
-  document.title = "Login | MediCare Connect";
-}, []);
+    document.title = "Register | MediCare Connect";
+  }, []);
+
   const { createUser } = useContext(AuthContext);
   const [error, setError] = useState("");
   const [role, setRole] = useState("patient");
@@ -19,21 +17,26 @@ const Register = () => {
     setError("");
 
     const form = e.target;
-    const name = form.name.value;
-    const email = form.email.value;
-    const image = form.photo.value || "https://i.ibb.co/4pDNDk1/avatar.png";
+
+    const name = form.name.value.trim();
+    const email = form.email.value.trim();
+    const image =
+      form.photo.value.trim() || "https://i.ibb.co/4pDNDk1/avatar.png";
     const password = form.password.value;
 
     if (password.length < 6) {
-      return setError("Password must be at least 6 characters.");
+      setError("Password must be at least 6 characters.");
+      return;
     }
 
     if (!/\d/.test(password)) {
-      return setError("Password must include at least one number.");
+      setError("Password must include at least one number.");
+      return;
     }
 
     if (!/[!@#$%^&*]/.test(password)) {
-      return setError("Password must include at least one special character.");
+      setError("Password must include at least one special character.");
+      return;
     }
 
     const result = await createUser(name, email, password, image);
@@ -53,23 +56,36 @@ const Register = () => {
     };
 
     if (role === "doctor") {
-      userInfo.specialization = form.specialization.value;
-      userInfo.qualifications = form.qualifications.value;
-      userInfo.experience = form.experience.value;
-      userInfo.consultationFee = form.consultationFee.value;
-      userInfo.availableSlots = form.availableSlots.value;
+      userInfo.specialization = form.specialization.value.trim();
+      userInfo.qualifications = form.qualifications.value.trim();
+      userInfo.experience = form.experience.value.trim();
+      userInfo.consultationFee = Number(form.consultationFee.value);
+      userInfo.availableSlots = form.availableSlots.value.trim();
     }
 
-    await fetch("http://localhost:5000/users", {
+    const saveUserRes = await fetch("http://localhost:5000/users", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+      },
       body: JSON.stringify(userInfo),
     });
 
+    const saveUserData = await saveUserRes.json();
+    console.log("SAVE USER RESPONSE:", saveUserData);
+
+    if (!saveUserRes.ok) {
+      setError(saveUserData.message || "Failed to save user information.");
+      return;
+    }
+
     form.reset();
+    setRole("patient");
 
     if (role === "doctor") {
-      alert("Doctor registration successful. Please wait for admin verification.");
+      alert(
+        "Doctor registration successful. Please wait for admin verification."
+      );
       navigate("/login");
     } else {
       navigate("/dashboard");
