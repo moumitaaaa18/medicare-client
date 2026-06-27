@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { AuthContext } from "../../providers/AuthProvider";
+import { AuthContext } from "../../Providers/AuthProvider";
 import CheckoutForm from "../Register/CheckoutForm";
 import AdminAnalytics from "../../components/AdminAnalytics";
 
