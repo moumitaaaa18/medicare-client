@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../Providers/AuthProvider";
 
 const Login = () => {
-  const { loginUser, googleLogin } = useContext(AuthContext);
+  const { loginUser } = useContext(AuthContext);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -27,31 +27,23 @@ const Login = () => {
     const email = form.email.value;
     const password = form.password.value;
 
-    const result = await loginUser(email, password);
+    try {
+      const result = await loginUser(email, password);
 
-    if (result?.error) {
-      setError(result.error.message);
-      setLoading(false);
-      return;
-    }
+      if (result?.error) {
+        setError(result.error.message || "Login failed");
+        setLoading(false);
+        return;
+      }
 
-    setSuccess("Login successful");
-    form.reset();
+      setSuccess("Login successful");
 
-    setTimeout(() => {
-      navigate(from, { replace: true });
-    }, 700);
-  };
-
-  const handleGoogleLogin = async () => {
-    setError("");
-    setSuccess("");
-    setLoading(true);
-
-    const result = await googleLogin();
-
-    if (result?.error) {
-      setError(result.error.message);
+      setTimeout(() => {
+        navigate(from, { replace: true });
+        window.location.reload();
+      }, 500);
+    } catch (err) {
+      setError(err.message || "Something went wrong");
       setLoading(false);
     }
   };
@@ -94,16 +86,6 @@ const Login = () => {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-
-        <div className="divider">OR</div>
-
-        <button
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          className="w-full border border-cyan-200 py-3 rounded-xl font-semibold text-slate-700 hover:bg-cyan-50 transition disabled:opacity-60"
-        >
-          {loading ? "Redirecting..." : "Continue with Google"}
-        </button>
 
         <p className="text-center text-slate-600 mt-6">
           New here?{" "}
