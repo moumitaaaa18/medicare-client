@@ -63,7 +63,7 @@ const Register = () => {
       userInfo.availableSlots = form.availableSlots.value.trim();
     }
 
-    const saveUserRes = await fetch("http://localhost:5000/users", {
+    const saveUserRes = await fetch(`${import.meta.env.VITE_API_URL}/users`, {
       method: "POST",
       headers: {
         "content-type": "application/json",

@@ -15,7 +15,7 @@ const CheckoutForm = ({ appointment, onSuccess }) => {
     try {
       if (!stripe || !elements) return;
 
-      const res = await fetch("http://localhost:5000/create-payment-intent", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/create-payment-intent`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ fee: appointment.consultationFee }),
@@ -40,7 +40,7 @@ const CheckoutForm = ({ appointment, onSuccess }) => {
       }
 
       if (result.paymentIntent.status === "succeeded") {
-        await fetch("http://localhost:5000/payments", {
+        await fetch(`${import.meta.env.VITE_API_URL}/payments`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
@@ -54,7 +54,7 @@ const CheckoutForm = ({ appointment, onSuccess }) => {
           }),
         });
 
-        await fetch(`http://localhost:5000/appointments/${appointment._id}`, {
+        await fetch(`${import.meta.env.VITE_API_URL}/appointments/${appointment._id}`, {
           method: "PATCH",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({

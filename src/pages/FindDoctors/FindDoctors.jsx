@@ -17,8 +17,8 @@ const FindDoctors = () => {
 
   useEffect(() => {
     fetch(
-      `http://localhost:5000/doctors?search=${search}&sort=${sortType}&page=${page}&limit=6`
-    )
+  `${import.meta.env.VITE_API_URL}/doctors?search=${search}&sort=${sortType}&page=${page}&limit=6`
+)
       .then((res) => res.json())
       .then((data) => {
         setDoctors(data.doctors || []);

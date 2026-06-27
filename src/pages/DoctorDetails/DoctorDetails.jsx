@@ -12,7 +12,7 @@ const DoctorDetails = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`http://localhost:5000/doctors/${id}`)
+    fetch(`${import.meta.env.VITE_API_URL}/doctors/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setDoctor(data);
@@ -63,7 +63,7 @@ const DoctorDetails = () => {
       symptoms: form.symptoms.value,
     };
 
-    const res = await fetch("http://localhost:5000/appointments", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/appointments`, {
       method: "POST",
       headers: {
         "content-type": "application/json",

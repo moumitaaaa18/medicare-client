@@ -10,7 +10,7 @@ const AuthProvider = ({ children }) => {
   const saveJwtToken = async (email) => {
     if (!email) return;
 
-    const tokenRes = await fetch("http://localhost:5000/jwt", {
+    const tokenRes = await fetch(`${import.meta.env.VITE_API_URL}/jwt`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ email }),

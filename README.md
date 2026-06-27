@@ -85,12 +85,12 @@ Create a `.env` file inside the server folder.
 ```env
 MONGODB_URI=your_mongodb_uri
 BETTER_AUTH_SECRET=your_secret
-BETTER_AUTH_URL=http://localhost:5000
+
 JWT_SECRET=your_jwt_secret
 STRIPE_SECRET_KEY=your_stripe_secret_key
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
-CLIENT_URL=http://localhost:5173
+
 ```
 
 ---
