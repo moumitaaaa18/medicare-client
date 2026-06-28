@@ -3,8 +3,7 @@ import { FaFacebookF, FaLinkedinIn, FaGithub } from "react-icons/fa";
 
 const Footer = () => {
   const linkStyle =
-    "text-slate-300 hover:text-cyan-400 hover:translate-x-1 transition-all duration-300";
-
+  "block rounded-lg bg-slate-900 px-4 py-3 text-slate-200 border border-slate-700 active:bg-cyan-600 active:text-white hover:bg-cyan-600 hover:text-white transition-all duration-300";
   return (
     <footer className="mt-20 bg-slate-950 text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 md:grid-cols-4">
