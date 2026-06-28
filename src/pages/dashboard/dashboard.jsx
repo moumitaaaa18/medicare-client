@@ -441,13 +441,13 @@ const Dashboard = () => {
                             value={reviewText}
                             onChange={(e) => setReviewText(e.target.value)}
                             placeholder="Write your review..."
-                            className="textarea textarea-bordered w-full"
+                            className="textarea textarea-bordered w-full bg-white text-slate-900 placeholder:text-slate-400 border-cyan-200 focus:border-cyan-500 focus:outline-none"
                           />
 
                           <select
                             value={rating}
                             onChange={(e) => setRating(Number(e.target.value))}
-                            className="select select-bordered w-full"
+                            className="select select-bordered w-full bg-white text-slate-900 border-cyan-200 focus:border-cyan-500 focus:outline-none"
                           >
                             <option value={5}>⭐⭐⭐⭐⭐</option>
                             <option value={4}>⭐⭐⭐⭐</option>
