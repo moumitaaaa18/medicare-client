@@ -28,16 +28,20 @@ const AuthProvider = ({ children }) => {
       const session = await authClient.getSession();
       const currentUser = session?.data?.user || null;
 
-      setUser(currentUser);
+      if (currentUser) {
+        setUser(currentUser);
+        localStorage.setItem("user", JSON.stringify(currentUser));
 
-      if (currentUser?.email) {
-        await saveJwtToken(currentUser.email);
+        if (currentUser.email) {
+          await saveJwtToken(currentUser.email);
+        }
+      } else {
+        const savedUser = localStorage.getItem("user");
+        setUser(savedUser ? JSON.parse(savedUser) : null);
       }
-
-      return currentUser;
     } catch {
-      setUser(null);
-      return null;
+      const savedUser = localStorage.getItem("user");
+      setUser(savedUser ? JSON.parse(savedUser) : null);
     } finally {
       setLoading(false);
     }
@@ -53,10 +57,17 @@ const AuthProvider = ({ children }) => {
       image: photo,
     });
 
-    if (result?.data?.user) {
-      setUser(result.data.user);
-      await saveJwtToken(result.data.user.email);
+    if (result?.error) {
+      setLoading(false);
+      return result;
     }
+
+    const createdUser = result?.data?.user || { name, email, image: photo };
+
+    setUser(createdUser);
+    localStorage.setItem("user", JSON.stringify(createdUser));
+
+    await saveJwtToken(email);
 
     setLoading(false);
     return result;
@@ -75,13 +86,12 @@ const AuthProvider = ({ children }) => {
       return result;
     }
 
-    const loggedUser = result?.data?.user || result?.data || { email };
+    const loggedUser = result?.data?.user || { email };
 
     setUser(loggedUser);
+    localStorage.setItem("user", JSON.stringify(loggedUser));
 
-    if (email) {
-      await saveJwtToken(email);
-    }
+    await saveJwtToken(email);
 
     setLoading(false);
     return result;
@@ -100,13 +110,14 @@ const AuthProvider = ({ children }) => {
     await authClient.signOut();
 
     setUser(null);
+    localStorage.removeItem("user");
     localStorage.removeItem("access-token");
 
     setLoading(false);
   };
 
   const refreshUser = async () => {
-    return await checkSession();
+    await checkSession();
   };
 
   useEffect(() => {

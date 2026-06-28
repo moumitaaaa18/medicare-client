@@ -40,7 +40,7 @@ const Login = () => {
 
       setTimeout(() => {
         navigate(from, { replace: true });
-        window.location.reload();
+        
       }, 500);
     } catch (err) {
       setError(err.message || "Something went wrong");
