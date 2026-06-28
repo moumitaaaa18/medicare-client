@@ -19,9 +19,12 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-        <Link to="/" className="text-2xl font-bold text-cyan-700">
-          MediCare<span className="text-slate-900">Connect</span>
-        </Link>
+        <Link to="/">
+  <h2 className="text-2xl font-bold">
+    <span className="text-cyan-700">MediCare</span>
+    <span className="text-slate-900">Connect</span>
+  </h2>
+</Link>
 
         <div className="hidden items-center gap-6 font-medium md:flex">
           {links}

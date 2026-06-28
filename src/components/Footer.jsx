@@ -11,7 +11,7 @@ const Footer = () => {
         <div>
           <h2 className="text-2xl font-bold text-cyan-700">
             MediCare<span className="text-white">Connect</span>
-          </h2>
+            </h2>
           <p className="mt-3 text-sm text-slate-300">
             Smart hospital appointment and healthcare management system.
           </p>
