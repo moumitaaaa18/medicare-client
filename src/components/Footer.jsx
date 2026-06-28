@@ -3,7 +3,8 @@ import { FaFacebookF, FaLinkedinIn, FaGithub } from "react-icons/fa";
 
 const Footer = () => {
   const linkStyle =
-  "block rounded-lg bg-slate-900 px-4 py-3 text-slate-200 border border-slate-700 active:bg-cyan-600 active:text-white hover:bg-cyan-600 hover:text-white transition-all duration-300";
+    "block rounded-lg bg-slate-900 px-4 py-3 text-slate-200 border border-slate-700 active:bg-cyan-600 active:text-white hover:bg-cyan-600 hover:text-white transition-all duration-300";
+
   return (
     <footer className="mt-20 bg-slate-950 text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 md:grid-cols-4">
@@ -23,7 +24,7 @@ const Footer = () => {
             <Link className={linkStyle} to="/find-doctors">Find Doctors</Link>
             <Link className={linkStyle} to="/about">About Us</Link>
             <Link className={linkStyle} to="/contact">Contact Us</Link>
-            <Link className={linkStyle} to="/contact">Dashboard</Link>
+            <Link className={linkStyle} to="/dashboard">Dashboard</Link>
           </div>
         </div>
 
