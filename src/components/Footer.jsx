@@ -2,13 +2,16 @@ import { Link } from "react-router-dom";
 import { FaFacebookF, FaLinkedinIn, FaGithub } from "react-icons/fa";
 
 const Footer = () => {
+  const linkStyle =
+    "text-slate-300 hover:text-cyan-400 hover:translate-x-1 transition-all duration-300";
+
   return (
     <footer className="mt-20 bg-slate-950 text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 md:grid-cols-4">
         <div>
           <h2 className="text-2xl font-bold text-cyan-700">
-  MediCare<span className="text-white">Connect</span>
-</h2>
+            MediCare<span className="text-white">Connect</span>
+          </h2>
           <p className="mt-3 text-sm text-slate-300">
             Smart hospital appointment and healthcare management system.
           </p>
@@ -16,11 +19,12 @@ const Footer = () => {
 
         <div>
           <h3 className="mb-3 font-semibold">Quick Links</h3>
-          <div className="flex flex-col gap-2 text-sm text-slate-300">
-            <Link to="/">Home</Link>
-            <Link to="/find-doctors">Find Doctors</Link>
-            <Link to="/about">About Us</Link>
-            <Link to="/contact">Contact Us</Link>
+          <div className="flex flex-col gap-2 text-sm">
+            <Link className={linkStyle} to="/">Home</Link>
+            <Link className={linkStyle} to="/find-doctors">Find Doctors</Link>
+            <Link className={linkStyle} to="/about">About Us</Link>
+            <Link className={linkStyle} to="/contact">Contact Us</Link>
+            <Link className={linkStyle} to="/contact">Dashboard</Link>
           </div>
         </div>
 
@@ -34,9 +38,15 @@ const Footer = () => {
         <div>
           <h3 className="mb-3 font-semibold">Social Links</h3>
           <div className="flex gap-3">
-            <span className="rounded-full bg-slate-800 p-3"><FaFacebookF /></span>
-            <span className="rounded-full bg-slate-800 p-3"><FaLinkedinIn /></span>
-            <span className="rounded-full bg-slate-800 p-3"><FaGithub /></span>
+            <span className="rounded-full bg-slate-800 p-3 hover:bg-cyan-600 transition">
+              <FaFacebookF />
+            </span>
+            <span className="rounded-full bg-slate-800 p-3 hover:bg-cyan-600 transition">
+              <FaLinkedinIn />
+            </span>
+            <span className="rounded-full bg-slate-800 p-3 hover:bg-cyan-600 transition">
+              <FaGithub />
+            </span>
           </div>
         </div>
       </div>
