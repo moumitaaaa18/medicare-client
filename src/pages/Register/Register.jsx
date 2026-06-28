@@ -72,12 +72,14 @@ const Register = () => {
     });
 
     const saveUserData = await saveUserRes.json();
+
     console.log("SAVE USER RESPONSE:", saveUserData);
 
     if (!saveUserRes.ok) {
       setError(saveUserData.message || "Failed to save user information.");
       return;
     }
+    localStorage.setItem("user", JSON.stringify(userInfo));
 
     form.reset();
     setRole("patient");
