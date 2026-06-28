@@ -33,8 +33,11 @@ const AuthProvider = ({ children }) => {
       if (currentUser?.email) {
         await saveJwtToken(currentUser.email);
       }
-    } catch (error) {
+
+      return currentUser;
+    } catch {
       setUser(null);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -50,12 +53,12 @@ const AuthProvider = ({ children }) => {
       image: photo,
     });
 
-    await checkSession();
-
-    if (!result?.error && email) {
-      await saveJwtToken(email);
+    if (result?.data?.user) {
+      setUser(result.data.user);
+      await saveJwtToken(result.data.user.email);
     }
 
+    setLoading(false);
     return result;
   };
 
@@ -67,12 +70,20 @@ const AuthProvider = ({ children }) => {
       password,
     });
 
-    await checkSession();
+    if (result?.error) {
+      setLoading(false);
+      return result;
+    }
 
-    if (!result?.error && email) {
+    const loggedUser = result?.data?.user || result?.data || { email };
+
+    setUser(loggedUser);
+
+    if (email) {
       await saveJwtToken(email);
     }
 
+    setLoading(false);
     return result;
   };
 
@@ -95,7 +106,7 @@ const AuthProvider = ({ children }) => {
   };
 
   const refreshUser = async () => {
-    await checkSession();
+    return await checkSession();
   };
 
   useEffect(() => {
